@@ -1,0 +1,82 @@
+library(gee)
+library(tidyverse)
+library(psych)
+
+# Standardize  PCs
+df1$PC1 = scale(df1$PC1)
+df1$PC2 = scale(df1$PC2)
+df1$PC3 = scale(df1$PC3)
+df1$PC4 = scale(df1$PC4)
+df1$PC5 = scale(df1$PC5)
+df1$PC6 = scale(df1$PC6)
+df1$PC7 = scale(df1$PC7)
+df1$PC8 = scale(df1$PC8)
+df1$PC9 = scale(df1$PC9)
+df1$PC10 = scale(df1$PC10)
+
+# Standardize PGSs
+df1$PGS1 = scale(df1$Nonwordreading_Eising2022)
+df1$PGS2 = scale(df1$Phonemeawareness_Eising2022)
+df1$PGS3 = scale(df1$Nonwordrepetition_Eising2022)
+df1$PGS4 = scale(df1$Spelling_Eising2022)
+df1$PGS5 = scale(df1$Wordreading_Eising2022)
+
+
+# Variables 
+pgs <- c('PGS1', 'PGS2', 'PGS3', 'PGS4', 'PGS5')
+PC <- paste0("PC", 1:10, collapse = " + ")
+
+outcomes <- c('gtmat1_z', 'itmat1_z', 'jtmat1_z', 'jmatt1_z', 'jmcat1t1_z','jmcat2t1_z', 'jmcat3t1_z', 'lmatot1_z', 'lma1tot1_z', 'lma2tot1_z', 'lma3tot1_z', 'ltmat1_z', 'pcexgcsematgrdm1_z', 'pcpvtot1_z', 'pcuntot1_z', 'pmatt1_z')
+pgs_vars <- paste0("PGS", 1:5)
+
+# Run Models
+
+gee_summary_list <- list()
+
+## Loop over outcomes
+for (outcome_var in outcomes) {
+
+  predictors <- c(pgs_vars, paste0("PC", 1:10), "chiptype")
+  formula_str <- as.formula(paste(outcome_var, "~", paste(predictors, collapse = " + ")))
+  
+  GEEfit <- gee(formula_str, id = df1$randomfamid, data = df1, corstr = "exchangeable")
+  gee_coef <- coef(summary(GEEfit))
+  nobs <- length(GEEfit$y)
+
+  for (pgs in pgs_vars) {
+    if (pgs %in% rownames(gee_coef)) {
+      est <- gee_coef[pgs, "Estimate"]
+      naive_se <- gee_coef[pgs, "Naive S.E."]
+      naive_z <- gee_coef[pgs, "Naive z"]
+      robust_se <- gee_coef[pgs, "Robust S.E."]
+      robust_z <- gee_coef[pgs, "Robust z"]
+      pval <- 2 * pnorm(abs(robust_z), lower.tail = FALSE)
+      r2 <- est^2
+      
+      gee_summary_list[[paste0(outcome_var, "_", pgs)]] <- data.frame(
+        Outcome = outcome_var,
+        PGS = pgs,
+        Estimate = est,
+        Naive_SE = naive_se,
+        Naive_Z = naive_z,
+        Robust_SE = robust_se,
+        Robust_Z = robust_z,
+        P_value = pval,
+        R2 = r2,
+        N = nobs
+      )
+    }
+  }
+}
+
+
+## Combine all results
+gee_summary_all <- do.call(rbind, gee_summary_list)
+rownames(gee_summary_all) <- NULL
+
+## Adjust p-values
+gee_summary_all$FDR_p <- p.adjust(gee_summary_all$P_value, method = "fdr")
+gee_summary_all$Bonferroni_p <- p.adjust(gee_summary_all$P_value, method = "bonferroni")
+
+# View summary
+head(gee_summary_all)
