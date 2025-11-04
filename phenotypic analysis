@@ -1,0 +1,527 @@
+---
+title: "Reading genetic pathway to math outcomes" 
+author: "Phoebe Zhu"
+
+---
+Project: Early Reading Skills as Predictors of Mathematics Outcomes: Genetic Insights and Environmental Interactions
+Code: Phenotypic analyses
+Authors: Zhixin Zhu ... & Lee Thompson 
+
+---
+
+All TEDS measures
+
+MEASURES AT FIRST CONTACT
+SES Measures:
+ases (Composite Score), afahqual (Father Highest Qualification Level), 
+afasoc (Father SOC group), amohqual (Mother Highest Qualification Level), 
+amosoc (Mother SOC group), amagechl (First Child Age)
+
+# MEASURES AT AGE 4.5
+
+Reading Measures:
+ecpht1/2 (Phonological Awareness - Total Score)
+ecmcvfl1/2 (McCarthy Verbal Fluency - Total Score)
+ecnont1/2 (Nonword Repetition - Total Score)
+
+General Cognitive Measure: 
+ecmcgci1/2 (McCarthy scores)
+
+# MEASURES AT AGE 7
+
+Reading Measures:
+gvocabt1/2 (WISC Vocabulary test - Total Score)
+gtowt1/2 (Composite TOWER Score - Standardised)
+
+General Cognitive Measure: 
+gcn1/2 (Child G Composite - Standardised)
+gcg1/2 (Child Verbal/Language Composite - Standardised)
+gcl1/2 (Child Nonverbal Composite - Standardised)
+
+Math Achievement:
+gtmat1/2 (Math Measures - Teacher Rated)
+
+# MEASURES AT AGE 9
+
+Math Measures:
+itmat1/2 (Math Measures - Teacher Rated)
+
+
+# MEASURES AT AGE 10
+
+Math Achievement:
+jmatt1/2 (Math - Web - Total)
+jmcat1t1/2 (Math - Understanding Numbers - Test Scores)
+jmcat2t1/2 (Math - Non-numerical Process - Test Scores)
+jmcat3t1/2 (Math - Computation & Knowledge - Test Scores)
+jtmat1/2 (Math - Teacher Rated)
+
+Reading Achievement:
+jteng1/2 (Reading - Teacher Rated)
+
+
+# MEASURES AT AGE 12
+
+Math Achievement:
+lmatot1/2 (Math - Web - Total)
+lma1tot1/2 (Math - Sub-test Scores)
+lma2tot1/2 (Math - Sub-test Scores)
+lma3tot1/2 (Math - Sub-test Scores)
+ltmat1/2 (Math - Teacher Rated Scores)
+
+Reading Achievement:
+lteng1/2 (Reading - Teacher Rated)
+
+
+# MEASURES AT AGE 16
+
+Math Achievement:
+pcuntot1/2 (Math - Understanding Number Test Score)
+pcpvtot1/2 (Math - Problem Verification Task - Total Score)
+pmatt11/2 (Math - Web total) ### composite score 
+pcexgcsematgrdm1/2 (Math - GCSE Score)
+
+
+Reading Achievement:
+pcexgcseenggrdm1/2 (Reading - GCSE Score)
+
+
+#-------------------------------------------------------------------------------------------------------------
+1. Descriptive statistics
+Unstandardized variables before adjusting for age and sex 
+
+```{r, inclue = FALSE}
+
+library(plyr);library(tidyverse);library(reshape2);library(foreign);library(Hmisc);library(psych);library (pastecs)
+
+## Apply exclusion criteria
+dat1 = dat[dat$exclude1 == 0,]
+dat2 = dat1[dat1$random == 1,]  ### randomly select one individual from each twin pair
+df = dat2
+df1<- df[c(df$genotyped1==1|df$genotyped2==1), ]  ### genotyped individual 
+
+SES <- describe(df1[, c('ases', 'amagechl', 'amohqual', 'amosoc', 'afahqual', 'afasoc')])
+
+age4.5 = describe(df1[, c('ecpht1','ecmcvfl1','ecnont1','ecmcgci1', 'etestage')])
+
+age7 = describe(df1[, c('gtowt1', 'gvocabt1', 'gcg1', 'gtmat1', 'gciage1', 'gtqage1')])
+
+age9 = describe(df1[, c('itage1', 'itmat1')])
+
+age10 = describe(df1[, c('jmcat1t1', 'jmcat2t1', 'jmcat3t1', 'jmatt1', 'jteng1', 'jtmat1','jtqage1', 'jcstage1')])
+
+age12 = describe(df1[, c('lmatot1', 'lma1tot1', 'lma2tot1', 'lma3tot1', 'lteng1', 'ltmat1','ltqage1', 'lcwage1')])
+
+age16 = describe(df1[, c('pcexgcsematgrdm1', 'pcexgcseenggrdm1', 'pcwebage1', 'pcexgcseage1', 'pmatt1')])
+
+
+#-------------------------------------------------------------------------------------------------------------
+2. Correlations bewteen early reading and math achievement
+All variables were adjusted for age and sex and standardized; 95% CIs were included 
+
+## Math 7 
+dat7 = df1[, c('ecpht1_z', 'ecmcvfl1_z', 'ecnont1_z','gvocabt1_z','gtowt1_z', 'gtmat1_z')]
+colnames(dat7) = c('phonological awareness4.5', 'verbal fluency4.5', 'nonword repetition4.5','WISC Vocabulary7','TOWRE7','math achievement7')
+cr7 = rcorr(as.matrix(dat7))
+
+### Get 95% CIs: pull the r, N and p values 
+rc7 = as.matrix(cr7$r); rc7[lower.tri(rc7)]<-NA; print(rc7)
+rc7<-melt(rc7); rc7<-data.frame(rc7[!is.na(rc7[,3]),])
+rc7 <- mutate(rc7, pair_var = paste(Var1, Var2, sep = " ")) 
+rc7 = rc7[, 3:4]
+
+nc7 = as.matrix(cr7$n); nc7[lower.tri(nc7)]<-NA; print(nc7)
+nc7<-melt(nc7); nc7<-data.frame(nc7[!is.na(nc7[,3]),])
+nc7 <- mutate(nc7, pair_var = paste(Var1, Var2, sep = " ")) 
+nc7 = nc7[, 3:4]
+
+pc7 = as.matrix(cr7$P); pc7[lower.tri(pc7)]<-NA; print(pc7)
+pc7<-melt(pc7); pc7<-data.frame(pc7[!is.na(pc7[,3]),]) 
+pc7 <- mutate(pc7, pair_var = paste(Var1, Var2, sep = " "))
+
+rdf7 = merge(rc7, nc7, by = 'pair_var')
+rdf7 = merge(rdf7, pc7, by = 'pair_var')
+colnames(rdf7)<- c ( "pair_var", "r", "N", "var1", "var2", "p")
+
+### Calculate CIs
+rdf7$lwr = NULL
+rdf7$upr = NULL
+
+for (row in 1:nrow(rdf7)){
+   rdf7[["lwr"]][row] <- CIr(r = rdf7[["r"]][row], n = rdf7[["N"]][row], level = .95)[1]
+   rdf7[["upr"]][row] <- CIr(r = rdf7[["r"]][row], n = rdf7[["N"]][row], level = .95)[2]
+}
+print(rdf7)
+
+
+## Math 9
+dat9 = df1[, c('ecpht1_z', 'ecmcvfl1_z', 'ecnont1_z','gvocabt1_z','gtowt1_z', 'itmat1_z')]
+
+colnames(dat9) = c('phonological awareness4.5', 'verbal fluency4.5', 'nonword repetition4.5', 'WISC Vocabulary7','TOWRE7', 'math achievement9')
+cr9 = rcorr(as.matrix(dat9))
+
+### Get 95% CIs: pull the r, N and p values 
+
+rc9 = as.matrix(cr9$r); rc9[lower.tri(rc9)]<-NA; print(rc9)
+rc9<-melt(rc9); rc9<-data.frame(rc9[!is.na(rc9[,3]),]) 
+rc9 <- mutate(rc9, pair_var = paste(Var1, Var2, sep = " ")) 
+rc9 = rc9[, 3:4]
+
+nc9 = as.matrix(cr9$n); nc9[lower.tri(nc9)]<-NA; print(nc9)
+nc9<-melt(nc9); nc9<-data.frame(nc9[!is.na(nc9[,3]),])
+nc9 <- mutate(nc9, pair_var = paste(Var1, Var2, sep = " ")) 
+nc9 = nc9[, 3:4]
+
+pc9 = as.matrix(cr9$P); pc9[lower.tri(pc9)]<-NA; print(pc9)
+pc9<-melt(pc9); pc9<-data.frame(pc9[!is.na(pc9[,3]),]) 
+pc9 <- mutate(pc9, pair_var = paste(Var1, Var2, sep = " "))
+
+rdf9 = merge(rc9, nc9, by = 'pair_var')
+rdf9 = merge(rdf9, pc9, by = 'pair_var')
+colnames(rdf9)<- c ( "pair_var", "r", "N", "var1", "var2", "p")
+
+#Calculate CIs
+rdf9$lwr = NULL
+rdf9$upr = NULL
+
+for (row in 1:nrow(rdf9)){
+   rdf9[["lwr"]][row] <- CIr(r = rdf9[["r"]][row], n = rdf9[["N"]][row], level = .95)[1]
+   rdf9[["upr"]][row] <- CIr(r = rdf9[["r"]][row], n = rdf9[["N"]][row], level = .95)[2]
+}
+print(rdf9)
+
+
+## Math 10
+dat10 = df1[, c('ecpht1_z', 'ecmcvfl1_z', 'ecnont1_z', 'gvocabt1_z','gtowt1_z', 'jmatt1_z', 'jmcat1t1_z', 'jmcat2t1_z', 'jmcat3t1_z', 'jtmat1_z')]
+
+colnames(dat10) = c('phonological awareness4.5', 'verbal fluency4.5', 'nonword repetition4.5',  'WISC Vocabulary7','TOWRE7', 'Math Total 10', 'Understanding Number10', 'Non-numerical Process10', 'Computation and Knowledge10', 'math achievement10')
+cr10 = rcorr(as.matrix(dat10))
+
+### Get 95% CIs: pull the r, N and p values 
+
+rc10 = as.matrix(cr10$r); rc10[lower.tri(rc10)]<-NA; print(rc10)
+rc10<-melt(rc10); rc10<-data.frame(rc10[!is.na(rc10[,3]),]) 
+rc10 <- mutate(rc10, pair_var = paste(Var1, Var2, sep = " ")) 
+rc10 = rc10[, 3:4]
+
+nc10 = as.matrix(cr10$n); nc10[lower.tri(nc10)]<-NA; print(nc10)
+nc10<-melt(nc10); nc10<-data.frame(nc10[!is.na(nc10[,3]),])
+nc10 <- mutate(nc10, pair_var = paste(Var1, Var2, sep = " ")) 
+nc10 = nc10[, 3:4]
+
+pc10 = as.matrix(cr10$P); pc10[lower.tri(pc10)]<-NA; print(pc10)
+pc10<-melt(pc10); pc10<-data.frame(pc10[!is.na(pc10[,3]),]) 
+pc10 <- mutate(pc10, pair_var = paste(Var1, Var2, sep = " "))
+
+rdf10 = merge(rc10, nc10, by = 'pair_var')
+rdf10 = merge(rdf10, pc10, by = 'pair_var')
+colnames(rdf10)<- c ( "pair_var", "r", "N", "var1", "var2", "p")
+
+### Calculate CIs
+rdf10$lwr = NULL
+rdf10$upr = NULL
+
+for (row in 1:nrow(rdf10)){
+   rdf10[["lwr"]][row] <- CIr(r = rdf10[["r"]][row], n = rdf10[["N"]][row], level = .95)[1]
+   rdf10[["upr"]][row] <- CIr(r = rdf10[["r"]][row], n = rdf10[["N"]][row], level = .95)[2]
+}
+print(rdf10)
+
+
+## Math 12
+dat12 = df1[, c('ecpht1_z', 'ecmcvfl1_z', 'ecnont1_z', 'gvocabt1_z','gtowt1_z', 'lmatot1_z', 'lma1tot1_z', 'lma2tot1_z', 'lma3tot1_z', 'ltmat1_z')]
+
+colnames(dat12) = c('phonological awareness4.5', 'verbal fluency4.5', 'nonword repetition4.5',  'WISC Vocabulary7','TOWRE7', 'Math Total 12', 'Understanding Number12', 'Non-numerical Process12', 'Computation and Knowledge12', 'math achievement12')
+cr12 = rcorr(as.matrix(dat12))
+
+### Get 95% CIs: pull the r, N and p values 
+
+rc12 = as.matrix(cr12$r); rc12[lower.tri(rc12)]<-NA; print(rc12)
+rc12<-melt(rc12); rc12<-data.frame(rc12[!is.na(rc12[,3]),]) 
+rc12 <- mutate(rc12, pair_var = paste(Var1, Var2, sep = " ")) 
+rc12 = rc12[, 3:4]
+
+nc12 = as.matrix(cr12$n); nc12[lower.tri(nc12)]<-NA; print(nc12)
+nc12<-melt(nc12); nc12<-data.frame(nc12[!is.na(nc12[,3]),])
+nc12 <- mutate(nc12, pair_var = paste(Var1, Var2, sep = " ")) 
+nc12 = nc12[, 3:4]
+
+pc12 = as.matrix(cr12$P); pc12[lower.tri(pc12)]<-NA; print(pc12)
+pc12<-melt(pc12); pc12<-data.frame(pc12[!is.na(pc12[,3]),]) 
+pc12 <- mutate(pc12, pair_var = paste(Var1, Var2, sep = " "))
+
+rdf12 = merge(rc12, nc12, by = 'pair_var')
+rdf12 = merge(rdf12, pc12, by = 'pair_var')
+colnames(rdf12)<- c ( "pair_var", "r", "N", "var1", "var2", "p")
+
+### Calculate CIs
+rdf12$lwr = NULL
+rdf12$upr = NULL
+
+for (row in 1:nrow(rdf12)){
+   rdf12[["lwr"]][row] <- CIr(r = rdf12[["r"]][row], n = rdf12[["N"]][row], level = .95)[1]
+   rdf12[["upr"]][row] <- CIr(r = rdf12[["r"]][row], n = rdf12[["N"]][row], level = .95)[2]
+}
+print(rdf12)
+
+
+## Math 16
+dat16 = df1[, c('ecpht1_z', 'ecmcvfl1_z', 'ecnont1_z','gvocabt1_z','gtowt1_z','pcuntot1_z', 'pcpvtot1_z', 'pcexgcsematgrdm1_z','pmatt1_z')]
+
+colnames(dat16) = c('phonological awareness4.5', 'verbal fluency4.5', 'nonword repetition4.5', 'WISC Vocabulary7','TOWRE7', 'Understanding Number16', 'Problem Verification Task16',"web-math")
+cr16 = rcorr(as.matrix(dat16))
+
+### Get 95% CIs: pull the r, N and p values 
+
+rc16 = as.matrix(cr16$r); rc16[lower.tri(rc16)]<-NA; print(rc16)
+rc16<-melt(rc16); rc16<-data.frame(rc16[!is.na(rc16[,3]),]) 
+rc16 <- mutate(rc16, pair_var = paste(Var1, Var2, sep = " ")) 
+rc16 = rc16[, 3:4]
+
+nc16 = as.matrix(cr16$n); nc16[lower.tri(nc16)]<-NA; print(nc16)
+nc16<-melt(nc16); nc16<-data.frame(nc16[!is.na(nc16[,3]),])
+nc16 <- mutate(nc16, pair_var = paste(Var1, Var2, sep = " ")) 
+nc16 = nc16[, 3:4]
+
+pc16 = as.matrix(cr16$P); pc16[lower.tri(pc16)]<-NA; print(pc16)
+pc16<-melt(pc16); pc16<-data.frame(pc16[!is.na(pc16[,3]),]) 
+pc16 <- mutate(pc16, pair_var = paste(Var1, Var2, sep = " "))
+
+rdf16 = merge(rc16, nc16, by = 'pair_var')
+rdf16 = merge(rdf16, pc16, by = 'pair_var')
+colnames(rdf16)<- c ( "pair_var", "r", "N", "var1", "var2", "p")
+
+### Calculate CIs
+rdf16$lwr = NULL
+rdf16$upr = NULL
+
+for (row in 1:nrow(rdf16)){
+   rdf16[["lwr"]][row] <- CIr(r = rdf16[["r"]][row], n = rdf16[["N"]][row], level = .95)[1]
+   rdf16[["upr"]][row] <- CIr(r = rdf16[["r"]][row], n = rdf16[["N"]][row], level = .95)[2]
+}
+print(rdf16)
+
+#-------------------------------------------------------------------------------------------------------------
+3. Correlations bewteen early reading and math achievement after accounting for g
+All variables were adjusted for age and sex and standardized; 95% CIs were included 
+
+library(broom)
+library(dplyr)
+
+## Math age 7
+m7_g1 <- lm(gtmat1_z ~ ecmcgci1_z + ecpht1_z + ecnont1_z + ecmcvfl1_z, data =df1)
+m7_g2 <- lm(gtmat1_z ~ gcg1_z +gtowt1_z +gvocabt1, data = df1)
+models <- list(m7_g1 = m7_g1, m7_g2 = m7_g2)
+
+summary_table1 <- bind_rows(
+  lapply(names(models), function(name) {
+    model <- models[[name]]
+    tidy(model, conf.int = TRUE) %>%
+       filter(term != "(Intercept)") %>%
+      mutate(
+        Model = name,
+        N = nobs(model)
+      )
+  })
+) %>%
+  select(Model, term, estimate, std.error, conf.low, conf.high, p.value, N) %>%
+  rename(
+    Estimate = estimate,
+    SE = std.error,
+    LB = conf.low,
+    UB = conf.high,
+    `P-value` = p.value
+  )
+
+## Math age 9
+m9_g1 <- lm(itmat1_z ~ ecmcgci1_z + ecpht1_z + ecnont1_z + ecmcvfl1_z, data =df1)
+m9_g2 <- lm(itmat1_z ~ gcg1_z +gtowt1_z +gvocabt1, data = df1)
+models9 <- list(m9_g1 = m9_g1, m9_g2 = m9_g2)
+
+summary_table2 <- bind_rows(
+  lapply(names(models9), function(name) {
+    model <- models9[[name]]
+    tidy(model, conf.int = TRUE) %>%
+       filter(term != "(Intercept)") %>%
+      mutate(
+        Model = name,
+        N = nobs(model)
+      )
+  }),
+  .id = "id"
+) %>%
+  select(Model, term, estimate, std.error, conf.low, conf.high, p.value, N) %>%
+  rename(
+    Estimate = estimate,
+    SE = std.error,
+    LB = conf.low,
+    UB = conf.high,
+    `P-value` = p.value
+  )
+
+  
+## Math age 10
+m10_g1 <- lm(jtmat1_z ~ ecmcgci1_z + ecpht1_z + ecnont1_z + ecmcvfl1_z, data =df1)
+m10_g2 <- lm(jtmat1_z ~ gcg1_z +gtowt1_z +gvocabt1, data = df1)
+models10_t <- list(m10_g1 = m10_g1, m10_g2 = m10_g2)
+
+summary_table3 <- bind_rows(
+  lapply(names(models10_t), function(name) {
+    model <- models10_t[[name]]
+    tidy(model, conf.int = TRUE) %>%
+       filter(term != "(Intercept)") %>%
+      mutate(
+        Model = name,
+        N = nobs(model)
+      )
+  }),
+  .id = "id"
+) %>%
+  select(Model, term, estimate, std.error, conf.low, conf.high, p.value, N) %>%
+  rename(
+    Estimate = estimate,
+    SE = std.error,
+    LB = conf.low,
+    UB = conf.high,
+    `P-value` = p.value
+  )
+
+m10_g1_w <- lm(jmatt1_z  ~ ecmcgci1_z + ecpht1_z + ecnont1_z + ecmcvfl1_z, data =df1)
+m10_g2_w <- lm(jmatt1_z  ~ gcg1_z +gtowt1_z +gvocabt1, data = df1)
+models10_w <- list(m10_g1_w = m10_g1_w, m10_g2_w  = m10_g2_w)
+
+summary_table4 <- bind_rows(
+  lapply(names(models10_w), function(name) {
+    model <- models10_w[[name]]
+    tidy(model, conf.int = TRUE) %>%
+       filter(term != "(Intercept)") %>%
+      mutate(
+        Model = name,
+        N = nobs(model)
+      )
+  }),
+  .id = "id"
+) %>%
+  select(Model, term, estimate, std.error, conf.low, conf.high, p.value, N) %>%
+  rename(
+    Estimate = estimate,
+    SE = std.error,
+    LB = conf.low,
+    UB = conf.high,
+    `P-value` = p.value
+  )
+
+## Math age 12
+m12_g1 <- lm(ltmat1_z ~ ecmcgci1_z + ecpht1_z + ecnont1_z + ecmcvfl1_z, data =df1)
+m12_g2 <- lm(ltmat1_z ~ gcg1_z +gtowt1_z +gvocabt1, data = df1)
+models12_t <- list(m12_g1 = m12_g1, m12_g2 = m12_g2)
+
+summary_table5 <- bind_rows(
+  lapply(names(models12_t), function(name) {
+    model <- models12_t[[name]]
+    tidy(model, conf.int = TRUE) %>%
+       filter(term != "(Intercept)") %>%
+      mutate(
+        Model = name,
+        N = nobs(model)
+      )
+  }),
+  .id = "id"
+) %>%
+  select(Model, term, estimate, std.error, conf.low, conf.high, p.value, N) %>%
+  rename(
+    Estimate = estimate,
+    SE = std.error,
+    LB = conf.low,
+    UB = conf.high,
+    `P-value` = p.value
+  )
+
+m12_g1_w <- lm(lmatot1_z ~ ecmcgci1_z + ecpht1_z + ecnont1_z + ecmcvfl1_z, data =df1)
+m12_g2_w <- lm(lmatot1_z ~ gcg1_z +gtowt1_z +gvocabt1, data = df1)
+models12_w <- list(m12_g1_w = m12_g1_w, m12_g2_w = m12_g2_w)
+
+summary_table6 <- bind_rows(
+  lapply(names(models12_w), function(name) {
+    model <- models12_w[[name]]
+    tidy(model, conf.int = TRUE) %>%
+       filter(term != "(Intercept)") %>%
+      mutate(
+        Model = name,
+        N = nobs(model)
+      )
+  }),
+  .id = "id"
+) %>%
+  select(Model, term, estimate, std.error, conf.low, conf.high, p.value, N) %>%
+  rename(
+    Estimate = estimate,
+    SE = std.error,
+    LB = conf.low,
+    UB = conf.high,
+    `P-value` = p.value
+  )
+
+## Math age 16
+
+##age 16
+m16_g1 <- lm(pcexgcsematgrdm1_z ~ ecmcgci1_z + ecpht1_z + ecnont1_z + ecmcvfl1_z, data =df1)
+m16_g2 <- lm(pcexgcsematgrdm1_z ~ gcg1_z +gtowt1_z +gvocabt1, data = df1)
+
+models16_t <- list(m16_g1 = m16_g1, m16_g2 = m16_g2)
+summary_table7 <- bind_rows(
+  lapply(names(models16_t), function(name) {
+    model <- models16_t[[name]]
+    tidy(model, conf.int = TRUE) %>%
+       filter(term != "(Intercept)") %>%
+      mutate(
+        Model = name,
+        N = nobs(model)
+      )
+  }),
+  .id = "id"
+) %>%
+  select(Model, term, estimate, std.error, conf.low, conf.high, p.value, N) %>%
+  rename(
+    Estimate = estimate,
+    SE = std.error,
+    LB = conf.low,
+    UB = conf.high,
+    `P-value` = p.value
+  )
+
+
+m16_g1_w <- lm(pmatt1_z ~ ecmcgci1_z + ecpht1_z + ecnont1_z + ecmcvfl1_z, data =df1)
+m16_g2_w <- lm(pmatt1_z ~ gcg1_z +gtowt1_z +gvocabt1, data = df1)
+
+models16_w <- list(m16_g1_w = m16_g1_w, m16_g2_w = m16_g2_w)
+
+summary_table8 <- bind_rows(
+  lapply(names(models16_w), function(name) {
+    model <- models16_w[[name]]
+    tidy(model, conf.int = TRUE) %>%
+       filter(term != "(Intercept)") %>%
+      mutate(
+        Model = name,
+        N = nobs(model)
+      )
+  }),
+  .id = "id"
+) %>%
+  select(Model, term, estimate, std.error, conf.low, conf.high, p.value, N) %>%
+  rename(
+    Estimate = estimate,
+    SE = std.error,
+    LB = conf.low,
+    UB = conf.high,
+    `P-value` = p.value
+  )
+
+summary_table1
+summary_table2
+summary_table3
+summary_table4
+summary_table5
+summary_table6
+summary_table7
+summary_table8
