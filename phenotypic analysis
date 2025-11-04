@@ -86,6 +86,14 @@ Reading Achievement:
 pcexgcseenggrdm1/2 (Reading - GCSE Score)
 
 
+SES measures
+pses (Composite Score)
+phhinc (Household Income)
+pmohqual (Mother Highest Qualification Level)
+pfahqual (Father Highest Qualification Level)
+pmosoc (Mother SOC Group)
+pfasoc (Father SOC Group)
+
 #-------------------------------------------------------------------------------------------------------------
 1. Descriptive statistics
 Unstandardized variables before adjusting for age and sex 
@@ -112,7 +120,7 @@ age10 = describe(df1[, c('jmcat1t1', 'jmcat2t1', 'jmcat3t1', 'jmatt1', 'jteng1',
 
 age12 = describe(df1[, c('lmatot1', 'lma1tot1', 'lma2tot1', 'lma3tot1', 'lteng1', 'ltmat1','ltqage1', 'lcwage1')])
 
-age16 = describe(df1[, c('pcexgcsematgrdm1', 'pcexgcseenggrdm1', 'pcwebage1', 'pcexgcseage1', 'pmatt1')])
+age16 = describe(df1[, c('pcexgcsematgrdm1', 'pcexgcseenggrdm1', 'pcwebage1', 'pcexgcseage1', 'pmatt1','pses', 'phhinc', 'pmohqual','pfahqual','pmosoc','pfasoc')])
 
 
 #-------------------------------------------------------------------------------------------------------------
