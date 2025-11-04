@@ -1,0 +1,870 @@
+# Load library
+require(ggplot2)
+library(lavaan)
+library(psych)
+library(foreign)
+library(dplyr)
+library(dlookr)
+library(tidyverse)
+library(pastecs)
+library(psychometric)
+library(umx)
+library(nFactors)
+library(factoextra)
+library(reshape2)
+library(ltm)
+library(gdata)
+library(purrr)
+library(Hmisc)
+require(mediation)
+library(devtools)
+library(semPlot)
+library(tidySEM)
+library(semMediation)
+
+#-----------------------------------------------------------------------------------------------------
+
+## Single mediator (PGS5)
+
+# Math Age 7
+
+gtmat1_z_pg5_TR <- "
+ #path c (direct effect) 
+ gtmat1_z ~ c * PGS5
+ # path a
+ gtowt1_z ~ a * PGS5
+ # path b
+ gtmat1_z ~ b * gtowt1_z 
+ indirect := a * b 
+ direct := c 
+ total := c + (a * b) 
+ " 
+### PGS: PGS5 MATH: gtmat1_z M: gtowt1_z 
+fitgtma1_z_pg5_TR<- sem(gtmat1_z_pg5_TR, data = df1, se = 'bootstrap') 
+summary(fitgtma1_z_pg5_TR, standardized=T, fit.measures=T, rsq=T) 
+output_fitgtma1_z_pg5_TR<- parameterEstimates(fitgtma1_z_pg5_TR, output = "data.frame") 
+
+Model_est_pg5_TR <- broom::tidy(fitgtma1_z_pg5_TR,conf.int = TRUE) 
+Model_est1_pg5_TR <- cbind(GPS="PGS5",Mediator="gtowt1_z",MathAch="gtmat1_z",Model_est_pg5_TR)  
+
+gtmat1_z_pg5 <- "
+ #path c (direct effect) 
+ gtmat1_z ~ c * PGI5
+ # path a
+ gvocabt1_z ~ a * PGI5
+ # path b
+ gtmat1_z ~ b * gvocabt1_z 
+ indirect := a * b 
+ direct := c 
+ total := c + (a * b) 
+"
+
+### PGS: PGS5 MATH: gtmat1_z M: gvocabt1_z 
+fitgtma1_z_pg5<- sem(gtmat1_z_pg5, data = df1, se = 'bootstrap') 
+summary(fitgtma1_z_pg5, standardized=T, fit.measures=T, rsq=T) 
+output_fitgtma1_z_pg5<- parameterEstimates(fitgtma1_z_pg5, output = "data.frame") 
+
+Model_est_pg5 <- broom::tidy(fitgtma1_z_pg5,conf.int = TRUE) 
+Model_est1_pg5 <- cbind(GPS="PGI5",Mediator="gvocabt1_z",MathAch="gtmat1_z",Model_est_pg5)  
+Paramgtmat1_z_pg5<- Model_est1_pg5[c(1:3,7:9), c(1:3,6:15)] 
+Model_fit5 <- broom::glance(fitgtma1_z_pg5) 
+Paramgtmat1_z_pg5<- cbind(Paramgtmat1_z_pg5,Model_fit5)
+
+
+Paramgtmat1_z_pg5_TR<- Model_est1_pg5_TR[c(1:3,7:9), c(1:3,6:15)] 
+Model_fit5_TR <- broom::glance(fitgtma1_z_pg5_TR) 
+Paramgtmat1_z_pg5_TR<- cbind(Paramgtmat1_z_pg5_TR,Model_fit5_TR)
+
+# Math age 9
+
+itmat1_z_pg5_TR <- "
+ #path c (direct effect) 
+ itmat1_z ~ c * PGS5
+ # path a
+ gtowt1_z ~ a * PGS5
+ # path b
+ itmat1_z ~ b * gtowt1_z 
+ indirect := a * b 
+ direct := c 
+ total := c + (a * b) 
+ "
+### PGS: PG5 MATH: itmat1_z M: gtowt1_z 
+fititma1_z_pg5_TR<- sem(itmat1_z_pg5_TR, data = df1, se = 'bootstrap') 
+summary(fititma1_z_pg5_TR, standardized=T, fit.measures=T, rsq=T) 
+output_fititma1_z_pg5_TR<- parameterEstimates(fititma1_z_pg5_TR, output = "data.frame") 
+
+Model_est_PG5_TR9 <- broom::tidy(fititma1_z_pg5_TR,conf.int = TRUE) 
+Model_est1_PG5_TR9 <- cbind(GPS="PGS5",Mediator="gtowt1_z",MathAch="itmat1_z",Model_est_PG5_TR9) 
+Paramitmat1_z_pg5_TR9<- Model_est1_PG5_TR9[c(1:3,7:9), c(1:3,6:15)] 
+Model_fit5_TR9 <- broom::glance(fititma1_z_pg5_TR) 
+Paramitmat1_z_pg5_TR9<- cbind(Paramitmat1_z_pg5_TR9,Model_fit5_TR9)
+
+itmat1_z_pg5_VC <- "
+ #path c (direct effect) 
+ itmat1_z ~ c * PGS5
+ # path a
+ gvocabt1_z ~ a * PGS5
+ # path b
+ itmat1_z ~ b * gvocabt1_z
+ indirect := a * b 
+ direct := c 
+ total := c + (a * b) 
+ "
+### PGS: PG5 MATH: itmat1_z M: gvocabt1_z
+fititma1_z_pg5_VC<- sem(itmat1_z_pg5_VC, data = df1, se = 'bootstrap') 
+summary(fititma1_z_pg5_VC, standardized=T, fit.measures=T, rsq=T) 
+output_fititma1_z_pg5_VC<- parameterEstimates(fititma1_z_pg5_VC, output = "data.frame") 
+
+Model_est_PG5_VC9 <- broom::tidy(fititma1_z_pg5_VC,conf.int = TRUE) 
+Model_est1_PG5_VC9 <- cbind(GPS="PGS5",Mediator="gvocabt1_z",MathAch="itmat1_z",Model_est_PG5_VC9) 
+Paramitmat1_z_pg5_VC9<- Model_est1_PG5_VC9[c(1:3,7:9), c(1:3,6:15)] 
+Model_fit5_VC9 <- broom::glance(fititma1_z_pg5_VC) 
+Paramitmat1_z_pg5_VC9<- cbind(Paramitmat1_z_pg5_VC9,Model_fit5_VC9)
+
+
+# Math age 10
+
+jtmat1_z_pg5_TR <- "
+ #path c (direct effect) 
+ jtmat1_z ~ c * PGS5
+ # path a
+ gtowt1_z ~ a * PGS5
+ # path b
+ jtmat1_z ~ b * gtowt1_z
+ indirect := a * b 
+ direct := c 
+ total := c + (a * b) 
+ "
+### PGS: PG5 MATH: jtmat1_z M: gtowt1_z
+fitjtma1_z_pg5_TR<- sem(jtmat1_z_pg5_TR, data = df1, se = 'bootstrap') 
+summary(fitjtma1_z_pg5_TR, standardized=T, fit.measures=T, rsq=T) 
+output_fitjtma1_z_pg5_TR<- parameterEstimates(fitjtma1_z_pg5_TR, output = "data.frame") 
+
+Model_est_PG5_TR10 <- broom::tidy(fitjtma1_z_pg5_TR,conf.int = TRUE) 
+Model_est1_PG5_TR10 <- cbind(GPS="PGS5",Mediator="gtowt1_z",MathAch="jtmat1_z",Model_est_PG5_TR10) 
+Paramjtmat1_z_pg5_TR10<- Model_est1_PG5_TR10[c(1:3,7:9), c(1:3,6:15)] 
+Model_fit5_TR10 <- broom::glance(fitjtma1_z_pg5_TR) 
+Paramjtmat1_z_pg5_TR10<- cbind(Paramjtmat1_z_pg5_TR10,Model_fit5_TR10)
+
+jtmat1_z_pg5_VC <- "
+ #path c (direct effect) 
+ jtmat1_z ~ c * PGS5
+ # path a
+ gvocabt1_z ~ a * PGS5
+ # path b
+ jtmat1_z ~ b * gvocabt1_z
+ indirect := a * b 
+ direct := c 
+ total := c + (a * b) 
+ "
+### PGS: PG5 MATH: jtmat1_z M: gvocabt1_z
+fitjtma1_z_pg5_VC<- sem(jtmat1_z_pg5_VC, data = df1, se = 'bootstrap') 
+summary(fitjtma1_z_pg5_VC, standardized=T, fit.measures=T, rsq=T) 
+output_fitjtma1_z_pg5_VC<- parameterEstimates(fitjtma1_z_pg5_VC, output = "data.frame") 
+
+Model_est_PG5_VC10 <- broom::tidy(fitjtma1_z_pg5_VC,conf.int = TRUE) 
+Model_est1_PG5_VC10 <- cbind(GPS="PGS5",Mediator="gvocabt1_z",MathAch="jtmat1_z",Model_est_PG5_VC10) 
+Paramjtmat1_z_pg5_VC10<- Model_est1_PG5_VC10[c(1:3,7:9), c(1:3,6:15)] 
+Model_fit5_VC10 <- broom::glance(fitjtma1_z_pg5_VC) 
+Paramjtmat1_z_pg5_VC10<- cbind(Paramjtmat1_z_pg5_VC10,Model_fit5_VC10)
+
+# Math age 12
+
+ltmat1_z_pg5_VC <- "
+ #path c (direct effect) 
+ ltmat1_z ~ c * PGS5
+ # path a
+ gvocabt1_z ~ a * PGS5
+ # path b
+ ltmat1_z ~ b * gvocabt1_z 
+ indirect := a * b 
+ direct := c 
+ total := c + (a * b) 
+ "
+### PGS: PG5 MATH: ltmat1_z M: gvocabt1_z
+fitltma1_z_pg5_VC<- sem(ltmat1_z_pg5_VC, data = df1, se = 'bootstrap') 
+summary(fitltma1_z_pg5_VC, standardized=T, fit.measures=T, rsq=T) 
+output_fitltma1_z_pg5_VC<- parameterEstimates(fitltma1_z_pg5_VC, output = "data.frame") 
+
+Model_est_PG5_VC12 <- broom::tidy(fitltma1_z_pg5_VC,conf.int = TRUE) 
+Model_est1_PG5_VC12 <- cbind(GPS="PGS5",Mediator="gvocabt1_z",MathAch="ltmat1_z",Model_est_PG5_VC12) 
+Paramltmat1_z_pg5_VC12<- Model_est1_PG5_VC12[c(1:3, 7:9), c(1:3,6:15)] 
+Model_fit5_VC12 <- broom::glance(fitltma1_z_pg5_VC) 
+Paramltmat1_z_pg5_VC12<- cbind(Paramltmat1_z_pg5_VC12,Model_fit5_VC12)
+
+ltmat1_z_pg5_TR <- "
+ #path c (direct effect) 
+ ltmat1_z ~ c * PGS5
+ # path a
+ gtowt1_z ~ a * PGS5
+ # path b
+ ltmat1_z ~ b * gtowt1_z 
+ indirect := a * b 
+ direct := c 
+ total := c + (a * b) 
+ "
+### PGS: PG5 MATH: ltmat1_z M: gtowt1_z
+fitltma1_z_pg5_TR<- sem(ltmat1_z_pg5_TR, data = df1, se = 'bootstrap') 
+summary(fitltma1_z_pg5_TR, standardized=T, fit.measures=T, rsq=T) 
+output_fitltma1_z_pg5_TR<- parameterEstimates(fitltma1_z_pg5_TR, output = "data.frame") 
+
+Model_est_PG5_TR12 <- broom::tidy(fitltma1_z_pg5_TR,conf.int = TRUE) 
+Model_est1_PG5_TR12 <- cbind(GPS="PGS5",Mediator="gtowt1_z",MathAch="ltmat1_z",Model_est_PG5_TR12) 
+Paramltmat1_z_pg5_TR12<- Model_est1_PG5_TR12[c(1:3,7:9), c(1:3,6:15)] 
+Model_fit5_TR12 <- broom::glance(fitltma1_z_pg5_TR) 
+Paramltmat1_z_pg5_TR12<- cbind(Paramltmat1_z_pg5_TR12,Model_fit5_TR12)
+
+pm_z_pg5_VC <- "
+ #path c (direct effect) 
+ pcexgcsematgrdm1_z ~ c * PGS5
+ # path a
+ gvocabt1_z ~ a * PGS5
+ # path b
+ pcexgcsematgrdm1_z ~ b * gvocabt1_z 
+ indirect := a * b 
+ direct := c 
+ total := c + (a * b) 
+ "
+### PGS: PG5 MATH: pcexgcsematgrdm1_z  M: gvocabt1_z
+fitpma1_z_pg5_VC<- sem(pm_z_pg5_VC , data = df1, se = 'bootstrap') 
+summary(fitpma1_z_pg5_VC, standardized=T, fit.measures=T, rsq=T) 
+output_fitpma1_z_pg5_VC<- parameterEstimates(fitpma1_z_pg5_VC, output = "data.frame") 
+
+Model_est_PG5_VC16 <- broom::tidy(fitpma1_z_pg5_VC,conf.int = TRUE) 
+Model_est1_PG5_VC16 <-cbind(GPS="PGS5",Mediator="gvocabt1_z",MathAch="pcexgcsematgrdm1_z",Model_est_PG5_VC16) 
+Parampmat1_z_pg5_VC16<- Model_est1_PG5_VC16[c(1:3,7:9), c(1:3,6:15)] 
+Model_fit5_VC16<- broom::glance(fitpma1_z_pg5_VC) 
+Parampmat1_z_pg5_VC16<- cbind(Parampmat1_z_pg5_VC16,Model_fit5_VC16)
+
+pm_z_pg5_TR <- "
+ #path c (direct effect) 
+ pcexgcsematgrdm1_z ~ c * PGS5
+ # path a
+ gtowt1_z ~ a * PGS5
+ # path b
+ pcexgcsematgrdm1_z ~ b * gtowt1_z
+ 
+ indirect := a * b 
+ direct := c 
+ total := c + (a * b) 
+ "
+### PGS: PG5 MATH: pcexgcsematgrdm1_z  M: gtowt1_z
+fitpma1_z_pg5_TR<- sem(pm_z_pg5_TR, data = df1, se = 'bootstrap') 
+summary(fitpma1_z_pg5_TR, standardized=T, fit.measures=T, rsq=T) 
+output_fitpma1_z_pg5_TR<- parameterEstimates(fitpma1_z_pg5_TR, output = "data.frame") 
+
+Model_est_PG5_TR16 <- broom::tidy(fitpma1_z_pg5_TR,conf.int = TRUE) 
+Model_est1_PG5_TR16 <-cbind(GPS="PGS5",Mediator="gtowt1_z",MathAch="pcexgcsematgrdm1_z",Model_est_PG5_TR16) 
+Parampmat1_z_pg5_TR16<- Model_est1_PG5_TR16[c(1:3,7:9), c(1:3,6:15)] 
+Model_fit5_TR16<- broom::glance(fitpma1_z_pg5_TR) 
+Parampmat1_z_pg5_TR16<- cbind(Parampmat1_z_pg5_TR16,Model_fit5_TR16)
+
+
+## Single mediator (PGS4)
+
+# Math age 7
+
+gtmat1_z_pg4 <- "
+ #path c (direct effect) 
+ gtmat1_z ~ c * PGS4
+ # path a
+ gvocabt1_z ~ a * PGS4
+ # path b
+ gtmat1_z ~ b * gvocabt1_z 
+ indirect := a * b 
+ direct := c 
+ total := c + (a * b) 
+"
+### PGS: PG4 MATH: gtmat1_z M: gvocabt1_z 
+fitgtma1_z_pg4<- sem(gtmat1_z_pg4, data = df1, se = 'bootstrap') 
+summary(fitgtma1_z_pg4, standardized=T, fit.measures=T, rsq=T) 
+output_fitgtma1_z_pg4<- parameterEstimates(fitgtma1_z_pg4, output = "data.frame") 
+
+Model_est_pg4 <- broom::tidy(fitgtma1_z_pg4,conf.int = TRUE) 
+Model_est1_pg4 <- cbind(GPS="PGS4",Mediator="gvocabt1_z",MathAch="gtmat1_z",Model_est_pg4)  
+Paramgtmat1_z_pg4<- Model_est1_pg4[c(1:3,7:9), c(1:3,6:15)] 
+Model_fit4 <- broom::glance(fitgtma1_z_pg4) 
+Paramgtmat1_z_pg4<- cbind(Paramgtmat1_z_pg4,Model_fit4)
+
+
+gtmat1_z_pg4_TR <- "
+ #path c (direct effect) 
+ gtmat1_z ~ c * PGS4
+ # path a
+ gtowt1_z ~ a * PGS4
+ # path b
+ gtmat1_z ~ b * gtowt1_z 
+ indirect := a * b 
+ direct := c 
+ total := c + (a * b) 
+ " 
+### PGS: PG4 MATH: gtmat1_z M: gtowt1_z 
+fitgtma1_z_pg4_TR<- sem(gtmat1_z_pg4_TR, data = df1, se = 'bootstrap') 
+summary(fitgtma1_z_pg4_TR, standardized=T, fit.measures=T, rsq=T) 
+output_fitgtma1_z_pg4_TR<- parameterEstimates(fitgtma1_z_pg4_TR, output = "data.frame") 
+
+Model_est_pg4_TR <- broom::tidy(fitgtma1_z_pg4_TR,conf.int = TRUE) 
+Model_est1_pg4_TR <- cbind(GPS="PGS4",Mediator="gtowt1_z",MathAch="gtmat1_z",Model_est_pg4_TR)  
+Paramgtmat1_z_pg4_TR<- Model_est1_pg4_TR[c(1:3,7:9), c(1:3,6:15)] 
+Model_fit4_TR <- broom::glance(fitgtma1_z_pg4_TR) 
+Paramgtmat1_z_pg4_TR<- cbind(Paramgtmat1_z_pg4_TR,Model_fit4_TR)
+
+# Math age 10
+
+jtmat1_z_pg4_TR <- "
+ #path c (direct effect) 
+ jtmat1_z ~ c * PGS4
+ # path a
+ gtowt1_z ~ a * PGS4
+ # path b
+ jtmat1_z ~ b * gtowt1_z
+ indirect := a * b 
+ direct := c 
+ total := c + (a * b) 
+ "
+### PGS: PG4 MATH: jtmat1_z M: gtowt1_z
+fitjtma1_z_pg4_TR<- sem(jtmat1_z_pg4_TR, data = df1, se = 'bootstrap') 
+summary(fitjtma1_z_pg4_TR, standardized=T, fit.measures=T, rsq=T) 
+output_fitjtma1_z_pg4_TR<- parameterEstimates(fitjtma1_z_pg4_TR, output = "data.frame") 
+
+Model_est_PG4_TR10 <- broom::tidy(fitjtma1_z_pg4_TR,conf.int = TRUE) 
+Model_est1_PG4_TR10 <- cbind(GPS="PGS4",Mediator="gtowt1_z",MathAch="jtmat1_z",Model_est_PG4_TR10) 
+
+Paramjtmat1_z_pg4_TR10<- Model_est1_PG4_TR10[c(1:3,7:9), c(1:3,6:15)] 
+Model_fit4_TR10 <- broom::glance(fitjtma1_z_pg4_TR) 
+Paramjtmat1_z_pg4_TR10<- cbind(Paramjtmat1_z_pg4_TR10,Model_fit4_TR10)
+
+
+jtmat1_z_pg4_VC <- "
+ #path c (direct effect) 
+ jtmat1_z ~ c * PGS4
+ # path a
+ gvocabt1_z ~ a * PGS4
+ # path b
+ jtmat1_z ~ b * gvocabt1_z
+ indirect := a * b 
+ direct := c 
+ total := c + (a * b) 
+ "
+### PGS: PG4 MATH: jtmat1_z M: gvocabt1_z
+fitjtma1_z_pg4_VC<- sem(jtmat1_z_pg4_VC, data = df1, se = 'bootstrap') 
+summary(fitjtma1_z_pg4_VC, standardized=T, fit.measures=T, rsq=T) 
+output_fitjtma1_z_pg4_VC<- parameterEstimates(fitjtma1_z_pg4_VC, output = "data.frame") 
+
+Model_est_PG4_VC10 <- broom::tidy(fitjtma1_z_pg4_VC,conf.int = TRUE) 
+Model_est1_PG4_VC10 <- cbind(GPS="PGS4",Mediator="gvocabt1_z",MathAch="jtmat1_z",Model_est_PG4_VC10) 
+Paramjtmat1_z_pg4_VC10<- Model_est1_PG4_VC10[c(1:3, 7:9), c(1:3,6:15)] 
+Model_fit4_VC10 <- broom::glance(fitjtma1_z_pg4_VC) 
+Paramjtmat1_z_pg4_VC10<- cbind(Paramjtmat1_z_pg4_VC10,Model_fit4_VC10)
+
+
+#-----------------------------------------------------------------------------------------------------------------
+## Two mediators (TWORE & G)
+
+gtmat1_z_two_pg5 <- '
+gtmat1_z ~ b1 * gtowt1_z + b2 * gcg1_z + c * PGS5
+gtowt1_z ~ a1 * PGS5
+gcg1_z ~ a2 * PGS5
+# Indirect effect
+indirect1 := a1 * b1
+indirect2 := a2 * b2
+# Direct effect
+direct := c
+# Total effect
+total := c + (a1 * b1) + (a2 * b2)
+# Residual varainces
+gtowt1_z ~~ gcg1_z
+'
+fitgtmat1_z_two_pg5 <- sem(gtmat1_z_two_pg5, data = df1)
+summary(fitgtmat1_z_two_pg5, standardized=T, fit.measures=T, rsq=T)
+Model_est <- broom::tidy(fitgtmat1_z_two_pg5,conf.int = TRUE) 
+Model_est1 <- cbind(GPS="PGS5",Mediator1="gtowt1_z",Mediator2="gcg1_z",MathAch="gtmat1_z",Model_est) 
+Paramgtmat1_z_two_pg5<- Model_est1[c(1:6, 11:14), c(1:4,7:16)] 
+Model_fit <- broom::glance(fitgtmat1_z_two_pg5) 
+Paramgtmat1_z_two_pg5<- cbind(Paramgtmat1_z_two_pg5,Model_fit)
+
+itmat1_z_two_pg5 <- '
+itmat1_z ~ b1 * gtowt1_z + b2 * gcg1_z + c * PGS5
+gtowt1_z ~ a1 * PGS5
+gcg1_z ~ a2 * PGS5
+# Indirect effect
+indirect1 := a1 * b1
+indirect2 := a2 * b2
+# Direct effect
+direct := c
+# Total effect
+total := c + (a1 * b1) + (a2 * b2)
+# Residual varainces
+gtowt1_z ~ gcg1_z
+'
+fititmat1_z_two_pg5 <- sem(itmat1_z_two_pg5, data = df1)
+summary(fititmat1_z_two_pg5, standardized=T, fit.measures=T, rsq=T)
+Model_est_a9 <- broom::tidy(fititmat1_z_two_pg5,conf.int = TRUE) 
+Model_est1_a9 <- cbind(GPS="PGS5",Mediator1="gtowt1_z",Mediator2="gcg1_z",MathAch="itmat1_z",Model_est_a9) 
+Paramitmat1_z_two_pg5<- Model_est1_a9[c(1:6, 11:14), c(1:4,7:16)] 
+Model_fit_a9 <- broom::glance(fititmat1_z_two_pg5) 
+Paramitmat1_z_two_pg5<- cbind(Paramitmat1_z_two_pg5,Model_fit_a9)
+
+jtmat1_z_two_pg5 <- '
+jtmat1_z ~ b1 * gtowt1_z + b2 * gcg1_z + c * PGS5
+gtowt1_z ~ a1 * PGS5
+gcg1_z ~ a2 * PGS5
+# Indirect effect
+indirect1 := a1 * b1
+indirect2 := a2 * b2
+# Direct effect
+direct := c
+# Total effect
+total := c + (a1 * b1) + (a2 * b2)
+# Residual varainces
+gtowt1_z ~ gcg1_z
+'
+fitjtmat1_z_two_pg5 <- sem(jtmat1_z_two_pg5, data = df1)
+summary(fitjtmat1_z_two_pg5, standardized=T, fit.measures=T, rsq=T)
+Model_est_a10 <- broom::tidy(fitjtmat1_z_two_pg5,conf.int = TRUE) 
+Model_est1_a10 <- cbind(GPS="PGS5",Mediator1="gtowt1_z",Mediator2="gcg1_z",MathAch="jtmat1_z",Model_est_a10) 
+Paramjtmat1_z_two_pg5<- Model_est1_a10[c(1:6, 11:14), c(1:4,7:16)] 
+Model_fit_a10 <- broom::glance(fitjtmat1_z_two_pg5) 
+Paramjtmat1_z_two_pg5<- cbind(Paramjtmat1_z_two_pg5,Model_fit_a10)
+
+
+ltmat1_z_two_pg5 <- '
+ltmat1_z ~ b1 * gtowt1_z + b2 * gcg1_z + c * PGS5
+gtowt1_z ~ a1 * PGS5
+gcg1_z ~ a2 * PGS5
+# Indirect effect
+indirect1 := a1 * b1
+indirect2 := a2 * b2
+# Direct effect
+direct := c
+# Total effect
+total := c + (a1 * b1) + (a2 * b2)
+# Residual varainces
+gtowt1_z ~ gcg1_z
+'
+fitltmat1_z_two_pg5 <- sem(ltmat1_z_two_pg5, data = df1)
+summary(fitltmat1_z_two_pg5, standardized=T, fit.measures=T, rsq=T)
+Model_est_a12 <- broom::tidy(fitltmat1_z_two_pg5,conf.int = TRUE) 
+Model_est1_a12 <- cbind(GPS="PGS5",Mediator1="gtowt1_z",Mediator2="gcg1_z",MathAch="ltmat1_z",Model_est_a12) 
+Paramltmat1_z_two_pg5<- Model_est1_a12[c(1:6, 11:14), c(1:4,7:16)] 
+Model_fit_a12 <- broom::glance(fitltmat1_z_two_pg5) 
+Paramltmat1_z_two_pg5<- cbind(Paramltmat1_z_two_pg5,Model_fit_a12)
+
+pmat1_z_two_pg5 <- '
+pcexgcsematgrdm1_z ~ b1 * gtowt1_z + b2 * gcg1_z + c * PGS5
+gtowt1_z ~ a1 * PGS5
+gcg1_z ~ a2 * PGS5
+# Indirect effect
+indirect1 := a1 * b1
+indirect2 := a2 * b2
+# Direct effect
+direct := c
+# Total effect
+total := c + (a1 * b1) + (a2 * b2)
+# Residual varainces
+gtowt1_z ~ gcg1_z
+'
+fitpmat1_z_two_pg5 <- sem(pmat1_z_two_pg5, data = df1)
+summary(fitpmat1_z_two_pg5, standardized=T, fit.measures=T, rsq=T)
+Model_est_a16 <- broom::tidy(fitpmat1_z_two_pg5,conf.int = TRUE) 
+Model_est1_a16 <- cbind(GPS="PGS5",Mediator1="gtowt1_z",Mediator2="gcg1_z",MathAch="pcexgcsematgrdm1_z",Model_est_a16) 
+Parampmat1_z_two_pg5<- Model_est1_a16[c(1:6, 11:14), c(1:4,7:16)] 
+Model_fit_a16 <- broom::glance(fitpmat1_z_two_pg5) 
+Parampmat1_z_two_pg5<- cbind(Parampmat1_z_two_pg5,Model_fit_a16)
+
+
+gtmat1_z_two_pg4 <- '
+gtmat1_z ~ b1 * gtowt1_z + b2 * gcg1_z + c * PGS4
+gtowt1_z ~ a1 * PGS4
+gcg1_z ~ a2 * PGS4
+# Indirect effect
+indirect1 := a1 * b1
+indirect2 := a2 * b2
+# Direct effect
+direct := c
+# Total effect
+total := c + (a1 * b1) + (a2 * b2)
+# Residual varainces
+gtowt1_z ~ gcg1_z
+'
+fitgtmat1_z_two_pg4 <- sem(gtmat1_z_two_pg4, data = df1)
+summary(fitgtmat1_z_two_pg4, standardized=T, fit.measures=T, rsq=T)
+Model_est_pg4_a7 <- broom::tidy(fitgtmat1_z_two_pg4,conf.int = TRUE) 
+Model_est1_pg4_a7 <- cbind(GPS="PGS4",Mediator1="gtowt1_z",Mediator2="gcg1_z",MathAch="gtmat1_z",Model_est_pg4_a7) 
+Paramgtmat1_z_two_pg4<- Model_est1_pg4_a7[c(1:6, 11:14), c(1:4,7:16)] 
+Model_fit_pg4_a7 <- broom::glance(fitgtmat1_z_two_pg4) 
+Paramgtmat1_z_two_pg4<- cbind(Paramgtmat1_z_two_pg4,Model_fit_pg4_a7)
+
+jtmat1_z_two_pg4 <- '
+jtmat1_z ~ b1 * gtowt1_z + b2 * gcg1_z + c * PGS4
+gtowt1_z ~ a1 * PGS4
+gcg1_z ~ a2 * PGS4
+# Indirect effect
+indirect1 := a1 * b1
+indirect2 := a2 * b2
+# Direct effect
+direct := c
+# Total effect
+total := c + (a1 * b1) + (a2 * b2)
+# Residual varainces
+gtowt1_z ~ gcg1_z
+'
+fitjtmat1_z_two_pg4 <- sem(jtmat1_z_two_pg4, data = df1)
+summary(fitjtmat1_z_two_pg4, standardized=T, fit.measures=T, rsq=T)
+Model_est_pg4_a10 <- broom::tidy(fitjtmat1_z_two_pg4,conf.int = TRUE) 
+Model_est1_pg4_a10 <- cbind(GPS="PGS4",Mediator1="gtowt1_z",Mediator2="gcg1_z",MathAch="jtmat1_z",Model_est_pg4_a10) 
+Paramjtmat1_z_two_pg4<- Model_est1_pg4_a10[c(1:6, 11:14), c(1:4,7:16)] 
+Model_fit_pg4_a10 <- broom::glance(fitjtmat1_z_two_pg4) 
+Paramjtmat1_z_two_pg4<- cbind(Paramjtmat1_z_two_pg4,Model_fit_pg4_a10)
+
+
+## Two mediators (Vocubulary & G)
+
+gtmat1_z_two_pg5_VC <- '
+gtmat1_z ~ b1 * gvocabt1_z + b2 * gcg1_z + c * PGS5
+gvocabt1_z ~ a1 * PGS5
+gcg1_z ~ a2 * PGS5
+# Indirect effect
+indirect1 := a1 * b1
+indirect2 := a2 * b2
+# Direct effect
+direct := c
+# Total effect
+total := c + (a1 * b1) + (a2 * b2)
+# Residual varainces
+gvocabt1_z  ~ gcg1_z
+'
+fitgtmat1_z_two_pg5_VC <- sem(gtmat1_z_two_pg5_VC, data = df1)
+summary(fitgtmat1_z_two_pg5_VC, standardized=T, fit.measures=T, rsq=T)
+Model_est_VC <- broom::tidy(fitgtmat1_z_two_pg5_VC,conf.int = TRUE) 
+Model_est1_VC <- cbind(GPS="PGS5",Mediator1="gvocabt1_z",Mediator2="gcg1_z",MathAch="gtmat1_z",Model_est_VC) 
+Paramgtmat1_z_two_pg5_VC<- Model_est1_VC[c(1:6, 11:14), c(1:4,7:16)] 
+Model_fit_VC <- broom::glance(fitgtmat1_z_two_pg5_VC) 
+Paramgtmat1_z_two_pg5_VC<- cbind(Paramgtmat1_z_two_pg5_VC,Model_fit_VC)
+
+
+itmat1_z_two_pg5_VC <- '
+itmat1_z ~ b1 * gvocabt1_z + b2 * gcg1_z + c * PGS5
+gvocabt1_z ~ a1 * PGS5
+gcg1_z ~ a2 * PGS5
+# Indirect effect
+indirect1 := a1 * b1
+indirect2 := a2 * b2
+# Direct effect
+direct := c
+# Total effect
+total := c + (a1 * b1) + (a2 * b2)
+# Residual varainces
+gvocabt1_z ~ gcg1_z
+'
+fititmat1_z_two_pg5_VC <- sem(itmat1_z_two_pg5_VC, data = df1)
+summary(fititmat1_z_two_pg5_VC, standardized=T, fit.measures=T, rsq=T)
+Model_est_a9_VC <- broom::tidy(fititmat1_z_two_pg5_VC,conf.int = TRUE) 
+Model_est1_a9_VC <- cbind(GPS="PGS5",Mediator1="gvocabt1_z",Mediator2="gcg1_z",MathAch="itmat1_z",Model_est_a9_VC) 
+Paramitmat1_z_two_pg5_VC<- Model_est1_a9_VC[c(1:6, 11:14), c(1:4,7:16)] 
+Model_fit_a9_VC <- broom::glance(fititmat1_z_two_pg5_VC) 
+Paramitmat1_z_two_pg5_VC<- cbind(Paramitmat1_z_two_pg5_VC,Model_fit_a9_VC)
+
+
+jtmat1_z_two_pg5_VC <- '
+jtmat1_z ~ b1 * gvocabt1_z + b2 * gcg1_z + c * PGS5
+gvocabt1_z ~ a1 * PGS5
+gcg1_z ~ a2 * PGS5
+# Indirect effect
+indirect1 := a1 * b1
+indirect2 := a2 * b2
+# Direct effect
+direct := c
+# Total effect
+total := c + (a1 * b1) + (a2 * b2)
+# Residual varainces
+gvocabt1_z ~ gcg1_z
+'
+fitjtmat1_z_two_pg5_VC <- sem(jtmat1_z_two_pg5_VC, data = df1)
+summary(fitjtmat1_z_two_pg5_VC, standardized=T, fit.measures=T, rsq=T)
+Model_est_a10_VC <- broom::tidy(fitjtmat1_z_two_pg5_VC,conf.int = TRUE) 
+Model_est1_a10_VC <- cbind(GPS="PGS5",Mediator1="gvocabt1_z",Mediator2="gcg1_z",MathAch="jtmat1_z",Model_est_a10_VC) 
+Paramjtmat1_z_two_pg5_VC<- Model_est1_a10_VC[c(1:6, 11:14), c(1:4,7:16)] 
+Model_fit_a10_VC <- broom::glance(fitjtmat1_z_two_pg5_VC) 
+Paramjtmat1_z_two_pg5_VC<- cbind(Paramjtmat1_z_two_pg5_VC,Model_fit_a10_VC)
+
+
+ltmat1_z_two_pg5_VC <- '
+ltmat1_z ~ b1 * gvocabt1_z + b2 * gcg1_z + c * PGS5
+gvocabt1_z ~ a1 * PGS5
+gcg1_z ~ a2 * PGS5
+# Indirect effect
+indirect1 := a1 * b1
+indirect2 := a2 * b2
+# Direct effect
+direct := c
+# Total effect
+total := c + (a1 * b1) + (a2 * b2)
+# Residual varainces
+gvocabt1_z ~ gcg1_z
+'
+fitltmat1_z_two_pg5_VC <- sem(ltmat1_z_two_pg5_VC, data = df1)
+summary(fitltmat1_z_two_pg5_VC, standardized=T, fit.measures=T, rsq=T)
+Model_est_a12_VC <- broom::tidy(fitltmat1_z_two_pg5_VC,conf.int = TRUE) 
+Model_est1_a12_VC <- cbind(GPS="PGS5",Mediator1="gvocabt1_z",Mediator2="gcg1_z",MathAch="ltmat1_z",Model_est_a12_VC) 
+Paramltmat1_z_two_pg5_VC<- Model_est1_a12_VC[c(1:6, 11:14), c(1:4,7:16)] 
+Model_fit_a12_VC <- broom::glance(fitltmat1_z_two_pg5_VC) 
+Paramltmat1_z_two_pg5_VC<- cbind(Paramltmat1_z_two_pg5_VC,Model_fit_a12_VC)
+
+
+pmat1_z_two_pg5_VC <- '
+pcexgcsematgrdm1_z ~ b1 * gvocabt1_z + b2 * gcg1_z + c * PGS5
+gvocabt1_z ~ a1 * PGS5
+gcg1_z ~ a2 * PGS5
+# Indirect effect
+indirect1 := a1 * b1
+indirect2 := a2 * b2
+# Direct effect
+direct := c
+# Total effect
+total := c + (a1 * b1) + (a2 * b2)
+# Residual varainces
+gvocabt1_z ~ gcg1_z
+'
+fitpmat1_z_two_pg5_VC <- sem(pmat1_z_two_pg5_VC, data = df1)
+summary(fitpmat1_z_two_pg5_VC, standardized=T, fit.measures=T, rsq=T)
+Model_est_a16_VC <- broom::tidy(fitpmat1_z_two_pg5_VC,conf.int = TRUE) 
+Model_est1_a16_VC <- cbind(GPS="PGS5",Mediator1="gvocabt1_z",Mediator2="gcg1_z",MathAch="pcexgcsematgrdm1_z",Model_est_a16_VC) 
+Parampmat1_z_two_pg5_VC<- Model_est1_a16_VC[c(1:6, 11:14), c(1:4,7:16)] 
+Model_fit_a16_VC <- broom::glance(fitpmat1_z_two_pg5_VC) 
+Parampmat1_z_two_pg5_VC<- cbind(Parampmat1_z_two_pg5_VC,Model_fit_a16_VC)
+
+
+gtmat1_z_two_pg4_VC <- '
+gtmat1_z ~ b1 * gvocabt1_z + b2 * gcg1_z + c * PGS4
+gvocabt1_z ~ a1 * PGS4
+gcg1_z ~ a2 * PGS4
+# Indirect effect
+indirect1 := a1 * b1
+indirect2 := a2 * b2
+# Direct effect
+direct := c
+# Total effect
+total := c + (a1 * b1) + (a2 * b2)
+# Residual varainces
+gvocabt1_z ~ gcg1_z
+'
+fitgtmat1_z_two_pg4_VC <- sem(gtmat1_z_two_pg4_VC, data = df1)
+summary(fitgtmat1_z_two_pg4_VC, standardized=T, fit.measures=T, rsq=T)
+Model_est_pg4_a7_VC <- broom::tidy(fitgtmat1_z_two_pg4_VC,conf.int = TRUE) 
+Model_est1_pg4_a7_VC <-cbind(GPS="PGS4",Mediator1="gvocabt1_z",Mediator2="gcg1_z",MathAch="gtmat1_z",Model_est_pg4_a7_VC) 
+Paramgtmat1_z_two_pg4_VC<- Model_est1_pg4_a7_VC[c(1:6, 11:14), c(1:4,7:16)] 
+Model_fit_pg4_a7_VC <- broom::glance(fitgtmat1_z_two_pg4_VC) 
+Paramgtmat1_z_two_pg4_VC<- cbind(Paramgtmat1_z_two_pg4_VC,Model_fit_pg4_a7_VC)
+
+jtmat1_z_two_pg4_VC <- '
+jtmat1_z ~ b1 * gvocabt1_z + b2 * gcg1_z + c * PGS4
+gvocabt1_z ~ a1 * PGS4
+gcg1_z ~ a2 * PGS4
+# Indirect effect
+indirect1 := a1 * b1
+indirect2 := a2 * b2
+# Direct effect
+direct := c
+# Total effect
+total := c + (a1 * b1) + (a2 * b2)
+# Residual varainces
+gvocabt1_z ~ gcg1_z
+'
+fitjtmat1_z_two_pg4_VC <- sem(jtmat1_z_two_pg4_VC, data = df1)
+summary(fitjtmat1_z_two_pg4_VC, standardized=T, fit.measures=T, rsq=T)
+Model_est_pg4_a10_VC <- broom::tidy(fitjtmat1_z_two_pg4_VC,conf.int = TRUE) 
+Model_est1_pg4_a10_VC <- cbind(GPS="PGS4",Mediator1="gvocabt1_z",Mediator2="gcg1_z",MathAch="jtmat1_z",Model_est_pg4_a10_VC) 
+Paramjtmat1_z_two_pg4_VC<- Model_est1_pg4_a10_VC[c(1:6, 11:14), c(1:4,7:16)] 
+Model_fit_pg4_a10_VC <- broom::glance(fitjtmat1_z_two_pg4_VC) 
+Paramjtmat1_z_two_pg4_VC<- cbind(Paramjtmat1_z_two_pg4_VC,Model_fit_pg4_a10_VC)
+
+
+#---------------------------------------------------------------------------------------------------------------------------------------
+Three Mediators
+gtmat1_z_thr_pg5 <- '
+gtmat1_z ~ b1 * gvocabt1_z + b2 * gtowt1_z + b3 * gcg1_z + c * PGS5
+gvocabt1_z ~ a1 * PGS5
+gtowt1_z ~ a2 * PGS5
+gcg1_z ~ a3 * PGS5
+# Indirect effect
+indirect1 := a1 * b1
+indirect2 := a2 * b2
+indirect3 := a3 * b3
+# Direct effect
+direct := c
+# Total effect
+total := c + (a1 * b1) + (a2 * b2) + (a3 * b3)
+# Residual varainces
+gvocabt1_z ~~ gcg1_z
+gtowt1_z ~~ gcg1_z
+gvocabt1_z ~~ gtowt1_z
+'
+fitgtmat1_z_thr_pg5 <- sem(gtmat1_z_thr_pg5, data = df1)
+summary(fitgtmat1_z_thr_pg5, standardized=T, fit.measures=T, rsq=T)
+Model_est <- broom::tidy(fitgtmat1_z_thr_pg5,conf.int = TRUE) 
+Model_est1 <- cbind(GPS="PGS5",Mediator1="gvocabt1_z",Mediator2="gtowt1_z",Mediator3="gcg1_z",MathAch="gtmat1_z",Model_est) 
+Paramgtmat1_z_thr_pg5<- Model_est1[c(1:10, 16:20), c(1:6,8:17)] 
+Model_fit <- broom::glance(fitgtmat1_z_thr_pg5) 
+Paramgtmat1_z_thr_pg5<- cbind(Paramgtmat1_z_thr_pg5,Model_fit)
+
+
+itmat1_z_thr_pg5 <- '
+itmat1_z ~ b1 * gvocabt1_z + b2 * gtowt1_z + b3 * gcg1_z + c * PGS5
+gvocabt1_z ~ a1 * PGS5
+gtowt1_z ~ a2 * PGS5
+gcg1_z ~ a3 * PGS5
+# Indirect effect
+indirect1 := a1 * b1
+indirect2 := a2 * b2
+indirect3 := a3 * b3
+# Direct effect
+direct := c
+# Total effect
+total := c + (a1 * b1) + (a2 * b2) + (a3 * b3)
+# Residual varainces
+gvocabt1_z ~~ gcg1_z
+gtowt1_z ~~ gcg1_z
+gvocabt1_z ~~ gtowt1_z
+'
+fititmat1_z_thr_pg5 <- sem(itmat1_z_thr_pg5, data = df1)
+summary(fititmat1_z_thr_pg5, standardized=T, fit.measures=T, rsq=T)
+Model_est_9 <- broom::tidy(fititmat1_z_thr_pg5,conf.int = TRUE) 
+Model_est1_9 <- cbind(GPS="PGS5",Mediator1="gvocabt1_z",Mediator2="gtowt1_z",Mediator3="gcg1_z",MathAch="itmat1_z",Model_est_9) 
+Paramitmat1_z_thr_pg5<- Model_est1_9[c(1:10, 16:20), c(1:6,8:17)] 
+Model_fit_9 <- broom::glance(fititmat1_z_thr_pg5) 
+Paramitmat1_z_thr_pg5<- cbind(Paramitmat1_z_thr_pg5,Model_fit_9)
+
+
+jtmat1_z_thr_pg5 <- '
+jtmat1_z ~ b1 * gvocabt1_z + b2 * gtowt1_z + b3 * gcg1_z + c * PGS5
+gvocabt1_z ~ a1 * PGS5
+gtowt1_z ~ a2 * PGS5
+gcg1_z ~ a3 * PGS5
+# Indirect effect
+indirect1 := a1 * b1
+indirect2 := a2 * b2
+indirect3 := a3 * b3
+# Direct effect
+direct := c
+# Total effect
+total := c + (a1 * b1) + (a2 * b2) + (a3 * b3)
+# Residual varainces
+gvocabt1_z ~~ gcg1_z
+gtowt1_z ~~ gcg1_z
+gvocabt1_z ~~ gtowt1_z
+'
+fitjtmat1_z_thr_pg5 <- sem(jtmat1_z_thr_pg5, data = df1)
+summary(fitjtmat1_z_thr_pg5, standardized=T, fit.measures=T, rsq=T)
+Model_est_10 <- broom::tidy(fitjtmat1_z_thr_pg5,conf.int = TRUE) 
+Model_est1_10 <- cbind(GPS="PGS5",Mediator1="gvocabt1_z",Mediator2="gtowt1_z",Mediator3="gcg1_z",MathAch="jtmat1_z",Model_est_10) 
+Paramjtmat1_z_thr_pg5<- Model_est1_10[c(1:10, 16:20), c(1:6,8:17)] 
+Model_fit_10 <- broom::glance(fitjtmat1_z_thr_pg5) 
+Paramjtmat1_z_thr_pg5<- cbind(Paramjtmat1_z_thr_pg5,Model_fit_10)
+
+
+ltmat1_z_thr_pg5 <- '
+ltmat1_z ~ b1 * gvocabt1_z + b2 * gtowt1_z + b3 * gcg1_z + c * PGS5
+gvocabt1_z ~ a1 * PGS5
+gtowt1_z ~ a2 * PGS5
+gcg1_z ~ a3 * PGS5
+# Indirect effect
+indirect1 := a1 * b1
+indirect2 := a2 * b2
+indirect3 := a3 * b3
+# Direct effect
+direct := c
+# Total effect
+total := c + (a1 * b1) + (a2 * b2) + (a3 * b3)
+# Residual varainces
+gvocabt1_z ~~ gcg1_z
+gtowt1_z ~~ gcg1_z
+gvocabt1_z ~~ gtowt1_z
+'
+fitltmat1_z_thr_pg5 <- sem(ltmat1_z_thr_pg5, data = df1)
+summary(fitltmat1_z_thr_pg5, standardized=T, fit.measures=T, rsq=T)
+Model_est_12 <- broom::tidy(fitltmat1_z_thr_pg5,conf.int = TRUE) 
+Model_est1_12 <- cbind(GPS="PGS5",Mediator1="gvocabt1_z",Mediator2="gtowt1_z",Mediator3="gcg1_z",MathAch="ltmat1_z",Model_est_12) 
+Paramltmat1_z_thr_pg5<- Model_est1_12[c(1:10, 16:20), c(1:6,8:17)] 
+Model_fit_12 <- broom::glance(fitltmat1_z_thr_pg5) 
+Paramltmat1_z_thr_pg5<- cbind(Paramltmat1_z_thr_pg5,Model_fit_12)
+
+
+pmat1_z_thr_pg5 <- '
+pcexgcsematgrdm1_z ~ b1 * gvocabt1_z + b2 * gtowt1_z + b3 * gcg1_z + c * PGS5
+gvocabt1_z ~ a1 * PGS5
+gtowt1_z ~ a2 * PGS5
+gcg1_z ~ a3 * PGS5
+# Indirect effect
+indirect1 := a1 * b1
+indirect2 := a2 * b2
+indirect3 := a3 * b3
+# Direct effect
+direct := c
+# Total effect
+total := c + (a1 * b1) + (a2 * b2) + (a3 * b3)
+# Residual varainces
+gvocabt1_z ~~ gcg1_z
+gtowt1_z ~~ gcg1_z
+gvocabt1_z ~~ gtowt1_z
+'
+fitpmat1_z_thr_pg5 <- sem(pmat1_z_thr_pg5, data = df1)
+summary(fitpmat1_z_thr_pg5, standardized=T, fit.measures=T, rsq=T)
+Model_est_16 <- broom::tidy(fitpmat1_z_thr_pg5,conf.int = TRUE) 
+Model_est1_16 <- cbind(GPS="PGS5",Mediator1="gvocabt1_z",Mediator2="gtowt1_z",Mediator3="gcg1_z",MathAch="pcexgcsematgrdm1_z",Model_est_16) 
+Parampmat1_z_thr_pg5<- Model_est1_16[c(1:10, 16:20), c(1:6,8:17)] 
+Model_fit_16 <- broom::glance(fitpmat1_z_thr_pg5) 
+Parampmat1_z_thr_pg5<- cbind(Parampmat1_z_thr_pg5,Model_fit_16)
+
+
+gtmat1_z_thr_pg4 <- '
+gtmat1_z ~ b1 * gvocabt1_z + b2 * gtowt1_z + b3 * gcg1_z + c * PGS4
+gvocabt1_z ~ a1 * PGS4
+gtowt1_z ~ a2 * PGS4
+gcg1_z ~ a3 * PGS4
+# Indirect effect
+indirect1 := a1 * b1
+indirect2 := a2 * b2
+indirect3 := a3 * b3
+# Direct effect
+direct := c
+# Total effect
+total := c + (a1 * b1) + (a2 * b2) + (a3 * b3)
+# Residual varainces
+gvocabt1_z ~~ gcg1_z
+gtowt1_z ~~ gcg1_z
+gvocabt1_z ~~ gtowt1_z
+'
+fitgtmat1_z_thr_pg4 <- sem(gtmat1_z_thr_pg4, data = df1)
+summary(fitgtmat1_z_thr_pg4, standardized=T, fit.measures=T, rsq=T)
+Model_est_pg4 <- broom::tidy(fitgtmat1_z_thr_pg4,conf.int = TRUE) 
+Model_est1_pg4 <- cbind(GPS="PGS4",Mediator1="gvocabt1_z",Mediator2="gtowt1_z",Mediator3="gcg1_z",MathAch="gtmat1_z",Model_est_pg4) 
+Paramgtmat1_z_thr_pg4<- Model_est1_pg4[c(1:10, 16:20), c(1:6,8:17)] 
+Model_fit_pg4 <- broom::glance(fitgtmat1_z_thr_pg4) 
+Paramgtmat1_z_thr_pg4<- cbind(Paramgtmat1_z_thr_pg4,Model_fit_pg4)
+
+jtmat1_z_thr_pg4 <- '
+jtmat1_z ~ b1 * gvocabt1_z + b2 * gtowt1_z + b3 * gcg1_z + c * PGS4
+gvocabt1_z ~ a1 * PGS4
+gtowt1_z ~ a2 * PGS4
+gcg1_z ~ a3 * PGS4
+# Indirect effect
+indirect1 := a1 * b1
+indirect2 := a2 * b2
+indirect3 := a3 * b3
+# Direct effect
+direct := c
+# Total effect
+total := c + (a1 * b1) + (a2 * b2) + (a3 * b3)
+# Residual varainces
+gvocabt1_z ~~ gcg1_z
+gtowt1_z ~~ gcg1_z
+gvocabt1_z ~~ gtowt1_z
+'
+fitjtmat1_z_thr_pg4 <- sem(jtmat1_z_thr_pg4, data = df1)
+summary(fitjtmat1_z_thr_pg4, standardized=T, fit.measures=T, rsq=T)
+Model_est_10_pg4 <- broom::tidy(fitjtmat1_z_thr_pg4,conf.int = TRUE) 
+Model_est1_10_pg4 <- cbind(GPS="PGS4",Mediator1="gvocabt1_z",Mediator2="gtowt1_z",Mediator3="gcg1_z",MathAch="jtmat1_z",Model_est_10_pg4) 
+Paramjtmat1_z_thr_pg4<- Model_est1_10_pg4[c(1:10, 16:20), c(1:6,8:17)] 
+Model_fit_10_pg4 <- broom::glance(fitjtmat1_z_thr_pg4) 
+Paramjtmat1_z_thr_pg4<- cbind(Paramjtmat1_z_thr_pg4,Model_fit_10_pg4)
