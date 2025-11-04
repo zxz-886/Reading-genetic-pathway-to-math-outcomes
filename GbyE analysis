@@ -1,0 +1,159 @@
+# Load Packages
+library(dplyr)
+library(plyr)
+library(tidyverse)
+library(reshape2)
+library(foreign)
+library(Hmisc)
+library(psych)
+library(pastecs)
+library(psychometric)
+library(ggplot2)
+
+# Scale SES variables 
+var_ses <-c("ases", "afahqual", "afasoc", "amohqual", "amosoc", "amagechl")
+df1[,c(var_ses)]<- scale(df1[,c(var_ses)])
+
+# Correlation between SES and Reading PGSs
+spdf <- df1[,c("PGS1","PGS2","PGS3","PGS4","PGS5","ases", "afahqual", "afasoc", "amohqual", "amosoc", "amagechl")]
+spdf = rcorr(as.matrix(spdf))
+rsp = as.matrix(spdf$r); rsp[lower.tri(rsp)]<-NA; print(rsp)
+rsp<-melt(rsp); rsp<-data.frame(rsp[!is.na(rsp[,3]),])
+rsp <- mutate(rsp, pair_var = paste(Var1, Var2, sep = " ")) 
+rsp = rsp[, 3:4]
+nsp = as.matrix(spdf$n); nsp[lower.tri(nsp)]<-NA; print(nsp)
+nsp<-melt(nsp); nsp<-data.frame(nsp[!is.na(nsp[,3]),])
+nsp <- mutate(nsp, pair_var = paste(Var1, Var2, sep = " ")) 
+nsp = nsp[, 3:4]
+psp = as.matrix(spdf$P); psp[lower.tri(psp)]<-NA; print(psp)
+psp<-melt(psp); psp<-data.frame(psp[!is.na(psp[,3]),]) 
+psp <- mutate(psp, pair_var = paste(Var1, Var2, sep = " "))
+spdf = merge(rsp, nsp, by = 'pair_var')
+spdf = merge(spdf, psp, by = 'pair_var')
+colnames(spdf)<- c ( "pair_var", "r", "N", "var1", "var2", "p")
+spdf$lwr = NULL
+spdf$upr = NULL
+
+for (row in 1:nrow(spdf)){
+   spdf[["lwr"]][row] <- CIr(r = spdf[["r"]][row], n = spdf[["N"]][row], level = .95)[1]
+   spdf[["upr"]][row] <- CIr(r = spdf[["r"]][row], n = spdf[["N"]][row], level = .95)[2]
+}
+print(spdf)
+
+
+# Correlations between SES and math achievement 
+smdf <-  df1[,c("ases", "afahqual", "afasoc", "amohqual", "amosoc", "amagechl", 
+              'gtmat1','itmat1','jtmat1','jmatt1', 'jmcat1t1','jmcat2t1', 'jmcat3t1','lmatot1', 'lma1tot1', 'lma2tot1', 'lma3tot1','ltmat1','pcuntot1', 'pcpvtot1','pcexgcsematgrdm1')]
+
+smdf = rcorr(as.matrix(smdf))
+
+rsmp = as.matrix(smdf$r);rsmp[lower.tri(rsmp)]<-NA; print(rsmp)
+rsmp<-melt(rsmp); rsmp<-data.frame(rsmp[!is.na(rsmp[,3]),])
+rsmp <- mutate(rsmp, pair_var = paste(Var1, Var2, sep = " ")) 
+rsmp = rsmp[, 3:4]
+
+nsmp = as.matrix(smdf$n); nsmp[lower.tri(nsmp)]<-NA; print(nsmp)
+nsmp<-melt(nsmp); nsmp<-data.frame(nsmp[!is.na(nsmp[,3]),])
+nsmp <- mutate(nsmp, pair_var = paste(Var1, Var2, sep = " ")) 
+nsmp = nsmp[, 3:4]
+
+psmp = as.matrix(smdf$P); psmp[lower.tri(psmp)]<-NA; print(psmp)
+psmp<-melt(psmp); psmp<-data.frame(psmp[!is.na(psmp[,3]),]) 
+psmp <- mutate(psmp, pair_var = paste(Var1, Var2, sep = " "))
+
+smdf = merge(rsmp, nsmp, by = 'pair_var')
+smdf = merge(smdf, psmp, by = 'pair_var')
+colnames(smdf)<- c ( "pair_var", "r", "N", "var1", "var2", "p")
+
+smdf$lwr = NULL
+smdf$upr = NULL
+
+for (row in 1:nrow(smdf)){
+   smdf[["lwr"]][row] <- CIr(r = smdf[["r"]][row], n = smdf[["N"]][row], level = .95)[1]
+   smdf[["upr"]][row] <- CIr(r = smdf[["r"]][row], n = smdf[["N"]][row], level = .95)[2]
+}
+print(smdf)
+
+# G by E analysis
+vars <- c('gtmat1_z', 'itmat1_z', 'jmatt1_z', 'jmcat1t1_z', 'jmcat2t1_z', 'jmcat3t1_z',
+          'jtmat1_z', 'lmatot1_z', 'lma1tot1_z', 'lma2tot1_z', 'lma3tot1_z', 'ltmat1_z')
+
+# Initialize list to store results
+resultsL <- list()
+
+# Loop through each outcome variable
+for (outcome in vars) {
+  
+  # Build formula
+  formula_str <- paste0(outcome, " ~ PC1 + PC2 + PC3 + PC4 + PC5 + PC6 + PC7 + ",
+                        "PC8 + PC9 + PC10 + chiptype + ",
+                        "PGS1 + PGS2 + PGS3 + PGS4 + PGS5 + ",
+                        "+ ases + ",
+                        "PGS1 * ases + PGS2 * ases + PGS3 * ases + PGS4 * ases + PGS5 * ases")
+  f <- as.formula(formula_str)
+  
+  # Fit model
+  model <- lm(f, data = df1)
+  fit_summary <- summary(model)
+  
+  # Extract and round coefficients
+  coefs <- round(as.data.frame(fit_summary$coefficients), 3)
+  
+  # Filter: keep only PGS main and ases:PGS interactions
+  keep_terms <- grep("^PGS[1-5]$|^ases$|^PGS[1-5]:ases$|^ases:PGS[1-5]$", 
+                     rownames(coefs), value = TRUE)
+  selected_coefs <- coefs[rownames(coefs) %in% keep_terms, , drop = FALSE]
+  
+  # Add metadata
+  selected_coefs$term <- rownames(selected_coefs)
+  selected_coefs$outcome <- outcome
+  
+  # Store result
+  resultsL[[paste0("lm_", outcome)]] <- selected_coefs
+}
+
+all_results <- bind_rows(resultsL)
+
+print(all_results)
+
+# Define outcome variables
+pvars <- c('pcuntot1_z','pcpvtot1_z', "pcexgcsematgrdm1_z", "pmatt1_z")
+resultsP <- list()
+
+# Loop through each outcome variable
+for (outcome in pvars) {
+  
+  # Build formula
+  formula_str <- paste0(outcome, " ~ PC1 + PC2 + PC3 + PC4 + PC5 + PC6 + PC7 + ",
+                        "PC8 + PC9 + PC10 + chiptype + ",
+                        "PGS1 + PGS2 + PGS3 + PGS4 + PGS5 + ",
+                        "+ pses + ",
+                        "PGS1 * pses + PGS2 * pses + PGS3 * pses + PGS4 * pses + PGS5 * pses")
+  f <- as.formula(formula_str)
+  
+  # Fit model
+  model <- lm(f, data = df1)
+  fit_summary <- summary(model)
+  
+  # Extract and round coefficients
+  coefs <- round(as.data.frame(fit_summary$coefficients), 3)
+  
+  # Filter: keep only PGS main and pses:PGS interactions
+  keep_terms <- grep("^PGS[1-5]$|^pses$|^PGS[1-5]:pses$|^pses:PGS[1-5]$", 
+                     rownames(coefs), value = TRUE)
+  selected_coefs <- coefs[rownames(coefs) %in% keep_terms, , drop = FALSE]
+  
+  # Add metadata
+  selected_coefs$term <- rownames(selected_coefs)
+  selected_coefs$outcome <- outcome
+  
+  # Store result
+  resultsP[[paste0("lm_", outcome)]] <- selected_coefs
+}
+
+all_resultsP <- bind_rows(resultsP)
+
+# View or export
+print(all_resultsP)
+
+all_df <- rbind.data.frame(all_results, all_resultsP)
