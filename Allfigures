@@ -1,1 +1,925 @@
+# one mediator plot
+all1 <- dplyr::select(all1, GPS, Mediator, MathAch, label, estimate, p.value, conf.low, conf.high, FDR_p)
 
+all1$Age <- case_when(
+  startsWith(all1$MathAch, "g") ~ 7,
+  startsWith(all1$MathAch, "i") ~ 9,
+  startsWith(all1$MathAch, "j") ~ 10,
+  startsWith(all1$MathAch, "l") ~ 12,
+  startsWith(all1$MathAch, "p") ~ 16,
+  TRUE ~ NA_real_
+)
+
+all1 <- all1 %>%
+  mutate(Mediator = recode(Mediator,
+    "gvocabt1_z" = "Vocabulary",
+    "gtowt1_z" = "WRFluency"
+  ))
+
+all1 <- all1 %>% 
+  mutate(GPS = recode(GPS,
+                      "PGS4" = "Spelling PGS",
+                      "PGS5" = "Word reading PGS"))
+
+all1$Age = factor(all1$Age, levels = c(7,9,10,12,16), labels = paste("Age",c(7,9,10,12,16)))
+
+all1$MathAch <- recode_factor(
+  all1$MathAch, gtmat1_z = "MathAch 7_t", itmat1_z = "MathAch 9_t", jtmat1_z = "MathAch 10_t", ltmat1_z = "MathAch 12_t", 	
+pcexgcsematgrdm1_z = "MathAch 16_g", lmatot1_z = 'MathAch 12_w', pmatt1_z = 'MathAch 16_w')
+
+all1 <- all1 %>% 
+  filter(label %in% c("indirect", "direct")) %>%
+  mutate(
+    label = factor(label, levels = c("indirect", "direct")),
+    GPS = factor(GPS, levels = c("Spelling PGS", "Word reading PGS")),
+    Mediator = factor(Mediator, levels = c("Vocabulary", "WRFluency")),
+    MathAch = factor(MathAch, 
+                     levels = c("MathAch 16_w","MathAch 12_w", "MathAch 16_g","MathAch 12_t", "MathAch 10_t",  "MathAch 9_t", "MathAch 7_t"))
+  )
+
+all1$stars <- cut(all1$FDR_p, breaks=c(-Inf, 0.01, 0.05, Inf), label=c("**", "*", "")) 
+
+all1 <- all1 %>%
+  mutate(
+    MathAch_chr = as.character(MathAch),
+    MathType = case_when(
+      grepl("_(t|g)$", MathAch) ~ "Teacher/GCSE",
+      grepl("_w$", MathAch)     ~ "Web",
+      TRUE ~ NA_character_
+    ),
+    age_num = parse_number(MathAch_chr),
+    MathAch_label = paste0("MathAch ", age_num)
+  )
+
+MathAch_levels <- all1 %>%
+  arrange(desc(age_num)) %>%           
+  distinct(MathAch) %>%
+  pull(MathAch)
+
+all1<- all1 %>%
+  mutate(
+    MathAch  = factor(MathAch, levels = MathAch_levels),
+    MathType = factor(MathType, levels = c("Teacher/GCSE", "Web")),
+    MathAch_label = factor(MathAch_label, levels = c("MathAch 16", "MathAch 12", "MathAch 10", "MathAch 9", "MathAch 7"))
+  )
+
+strip_colors <- c(
+  "Teacher/GCSE" = "white",
+  "Web" = "#e7e5ee"
+)
+
+p1 <- ggplot(all1, aes(x = estimate, y = MathAch_label, fill = label)) +
+  geom_bar(stat = "identity", position = "stack", width = 0.45) +
+  scale_fill_manual(
+    values = c("indirect" = "#dbc6e0", "direct" = "#c8d4e9"),
+    breaks = c("indirect", "direct"),   
+    labels = c("indirect", "direct")
+  ) +
+   ggh4x::facet_nested(
+    rows = vars(MathType),
+    cols = vars(GPS, Mediator),
+    scales = "free_y",
+    space = "free_y",
+    strip = ggh4x::strip_nested(
+      text_x = ggh4x::elem_list_text(
+        size = c(8.5, 8.5, 8, 8), colour = rep("black", 4)
+      ),
+        background_y = ggh4x::elem_list_rect(
+          fill = c("white", "#e7e5ee"),
+          colour = "black"
+        ),
+      text_y = ggh4x::elem_list_text(
+        size = c(8,8),
+        colour = "black"
+      ),
+      by_layer_x = TRUE,
+      by_layer_y = FALSE
+    )
+  ) +
+  labs(
+    title = "A. One-Mediator Model",
+    y = NULL,
+    x = "Effect Size (β)"
+  ) +
+  theme_minimal(base_size = 12) +
+  theme(
+    plot.title      = element_text(size = 8, hjust = -0.1, vjust = 1),
+    strip.text      = element_text(size = 8),
+    panel.border    = element_rect(colour = "black", fill = NA),
+    panel.background= element_rect(fill = "white", colour = "white"),
+    panel.grid.major= element_blank(),
+    panel.grid.minor= element_blank(),
+    axis.text.y     = element_text(size = 8, colour = "black"),
+    axis.text.x     = element_text(size = 8, colour = "black"),
+    axis.title.x    = element_text(size = 8),
+    legend.position = "bottom",
+    legend.title    = element_blank(),
+    legend.text     = element_text(size = 8),
+    legend.key.size = unit(0.4, "cm")
+  ) +
+  scale_x_continuous(
+    limits = c(0, 0.15),
+    breaks = c(0, 0.05, 0.10, 0.15),
+    labels = c("0", "0.05", "0.10", "0.15")
+  ) +
+  scale_y_discrete(drop = TRUE) +
+  geom_text(
+    aes(label = stars),
+    position = position_stack(vjust = 0.5),
+    size = 4
+  )
+
+# two mediator plot
+all2 <- dplyr::select(all2, GPS, Mediator1, Mediator2, MathAch, label, estimate, p.value, conf.low, conf.high, FDR_p)
+
+all2$Age <- case_when(
+  startsWith(all2$MathAch, "g") ~ 7,
+  startsWith(all2$MathAch, "i") ~ 9,
+  startsWith(all2$MathAch, "j") ~ 10,
+  startsWith(all2$MathAch, "l") ~ 12,
+  startsWith(all2$MathAch, "p") ~ 16,
+  TRUE ~ NA_real_
+)
+
+all2 <- all2 %>% 
+  mutate(GPS = recode(GPS,
+                      "PGS4" = "Spelling PGS",
+                      "PGS5" = "Word reading PGS"))
+
+all2 <- all2 %>%
+  mutate(
+    Mediator1 = case_when(
+      Mediator1 == "gvocabt1_z" ~ "Vocabulary",
+      Mediator1 == "gtowt1_z" ~ "WRFluency",
+      TRUE ~ Mediator1
+    ),
+    Mediator2 = case_when(
+      Mediator2 == "gcg1_z" ~ "G",
+      TRUE ~ Mediator2
+    )
+  )
+
+all2$MathAch <- recode_factor(
+  all2$MathAch, gtmat1_z = "MathAch 7_t", itmat1_z = "MathAch 9_t", jtmat1_z = "MathAch 10_t", ltmat1_z = "MathAch 12_t", pcexgcsematgrdm1_z =  "MathAch 16_g",
+  lmatot1_z = 'MathAch 12_w', pmatt1_z = 'MathAch 16_w')
+
+all2 <- all2 %>% 
+  filter(label %in% c("indirect1", "indirect2" ,"direct")) %>%
+  mutate(
+    GPS = factor(GPS, levels = c("Spelling PGS", "Word reading PGS")),
+    MediatorPair = paste(Mediator1, "+", Mediator2),
+    label = recode(label, 
+                   "indirect1" = "indirect - reading",
+                   "indirect2" = "indirect - G",
+                                 "direct" = "direct"),
+    label = factor(label, levels = c("direct", "indirect - G", "indirect - reading"))
+  )
+
+all2$stars <- cut(all2$FDR_p, breaks=c(-Inf, 0.01, 0.05, Inf), label=c("**", "*", "")) 
+
+all2 <- all2 %>%
+  mutate(
+    MathAch_chr = as.character(MathAch),
+    
+    MathType = case_when(
+      grepl("_(t|g)$", MathAch) ~ "Teacher/GCSE",
+      grepl("_w$", MathAch)     ~ "Web",
+      TRUE ~ NA_character_
+    ),
+    age_num = parse_number(MathAch_chr),
+    MathAch_label = paste0("MathAch ", age_num)
+  )
+
+MathAch_levels <- all2 %>%
+  arrange(desc(age_num)) %>%           
+  distinct(MathAch) %>%
+  pull(MathAch)
+
+all2 <- all2 %>%
+  mutate(
+    MathAch  = factor(MathAch, levels = MathAch_levels),
+    MathType = factor(MathType, levels = c("Teacher/GCSE", "Web")),
+    MathAch_label = factor(MathAch_label, levels = c("MathAch 16", "MathAch 12", "MathAch 10", "MathAch 9", "MathAch 7"))
+  )
+
+p2 <- ggplot(all2, aes(x = estimate, y = MathAch_label, fill = label)) +
+  geom_bar(stat = "identity", position = "stack", width = 0.45) +
+  scale_fill_manual(
+    values = c("indirect - reading" = "#dbc6e0","indirect - G" = "#AEAFB3", "direct" = "#c8d4e9"),
+    breaks = c("indirect - reading", "indirect - G", "direct"),   
+    labels = c("indirect - reading", "indirect - G", "direct")
+  ) +
+   ggh4x::facet_nested(
+    rows = vars(MathType),
+    cols = vars(GPS, MediatorPair),
+    scales = "free_y",
+    space = "free_y",
+    strip = ggh4x::strip_nested(
+      text_x = ggh4x::elem_list_text(
+        size = c(8.5, 8.5, 8, 8), colour = rep("black", 4)
+      ),
+        background_y = ggh4x::elem_list_rect(
+          fill = c("white", "#e7e5ee"),
+          colour = "black"
+        ),
+      text_y = ggh4x::elem_list_text(
+        size = c(8,8),
+        colour = "black"
+      ),
+      by_layer_x = TRUE,
+      by_layer_y = FALSE
+    )
+  ) +
+  labs(
+    title = "B. Two-Mediator Model",
+    y = NULL,
+    x = "Effect Size (β)"
+  ) +
+  theme_minimal(base_size = 12) +
+  theme(
+    plot.title      = element_text(size = 8, hjust = -0.1, vjust = 1),
+    strip.text      = element_text(size = 8),
+    panel.border    = element_rect(colour = "black", fill = NA),
+    panel.background= element_rect(fill = "white", colour = "white"),
+    panel.grid.major= element_blank(),
+    panel.grid.minor= element_blank(),
+    axis.text.y     = element_text(size = 8, colour = "black"),
+    axis.text.x     = element_text(size = 8, colour = "black"),
+    axis.title.x    = element_text(size = 8),
+    legend.position = "bottom",
+    legend.title    = element_blank(),
+    legend.text     = element_text(size = 8),
+    legend.key.size = unit(0.4, "cm")
+  ) +
+  scale_x_continuous(
+    limits = c(-0.003, 0.15), 
+    breaks = c(-0.003, 0.05, 0.10, 0.15), 
+    labels = c("0", "0.05", "0.10", "0.15")
+  ) +
+  scale_y_discrete(drop = TRUE) +
+  geom_text(
+    aes(label = stars),
+    position = position_stack(vjust = 0.5),
+    size = 4
+  )
+
+# three mediator plot
+all3 <- dplyr::select(all3, GPS, Mediator1, Mediator2,Mediator3, MathAch, label, estimate, p.value, conf.low, conf.high, FDR_p)
+
+all3$Age <- case_when(
+  startsWith(all3$MathAch, "g") ~ 7,
+  startsWith(all3$MathAch, "i") ~ 9,
+  startsWith(all3$MathAch, "j") ~ 10,
+  startsWith(all3$MathAch, "l") ~ 12,
+  startsWith(all3$MathAch, "p") ~ 16,
+  TRUE ~ NA_real_
+)
+
+all3 <- all3 %>% 
+  mutate(GPS = recode(GPS,
+                      "PGS4" = "Spelling PGS",
+                      "PGS5" = "Word reading PGS"))
+
+all3 <- all3 %>%
+  mutate(
+    Mediator1 = case_when(
+      Mediator1 == "gvocabt1_z" ~ "Vocabulary",
+      TRUE ~ Mediator1
+    ),
+    Mediator2 = case_when(
+      Mediator2 == "gtowt1_z" ~ "WRFluency",
+      TRUE ~ Mediator2
+    ),
+    Mediator3 = case_when(
+      Mediator3 == "gcg1_z" ~ "G",
+      TRUE ~ Mediator3
+    )
+  )
+
+all3$MathAch <- recode_factor(
+  all3$MathAch, gtmat1_z = "MathAch 7_t", itmat1_z = "MathAch 9_t", jtmat1_z = "MathAch 10_t", ltmat1_z = "MathAch 12_t", pcexgcsematgrdm1_z =  "MathAch 16_g",
+  lmatot1_z = 'MathAch 12_w', pmatt1_z = 'MathAch 16_w')
+
+all3$stars <- cut(all3$FDR_p, breaks=c(-Inf, 0.01, 0.05, Inf), label=c("**", "*", "")) 
+
+all3 <- all3 %>% 
+  filter(label %in% c("indirect1", "indirect2" ,"indirect3","direct")) %>%
+  mutate(
+    MediatorPair = paste(Mediator1, "+", Mediator2, "+", Mediator3),
+    label = recode(label, 
+                   "direct" = "direct",
+                   "indirect1" = "indirect - Vocabulary",
+                   "indirect2" = "indirect - WRFluency",
+                   "indirect3" = "indirect - G"),
+    label = factor(label, levels = c("direct", "indirect - G", "indirect - Vocabulary", "indirect - WRFluency"))
+  )
+
+all3 <- all3 %>%
+  mutate(
+    MathAch_chr = as.character(MathAch),
+    
+    MathType = case_when(
+      grepl("_(t|g)$", MathAch) ~ "Teacher/GCSE",
+      grepl("_w$", MathAch)     ~ "Web",
+      TRUE ~ NA_character_
+    ),
+    age_num = parse_number(MathAch_chr),
+    MathAch_label = paste0("MathAch ", age_num)
+  )
+
+MathAch_levels <- all3 %>%
+  arrange(desc(age_num)) %>%           
+  distinct(MathAch) %>%
+  pull(MathAch)
+
+all3 <- all3 %>%
+  mutate(
+    MathAch  = factor(MathAch, levels = MathAch_levels),
+    MathType = factor(MathType, levels = c("Teacher/GCSE", "Web")),
+    MathAch_label = factor(MathAch_label, levels = c("MathAch 16", "MathAch 12", "MathAch 10", "MathAch 9", "MathAch 7"))
+  )
+
+p3 <- ggplot(all3, aes(x = estimate, y = MathAch_label, fill = label)) +
+  geom_bar(stat = "identity", position = "stack", width = 0.45) +
+  scale_fill_manual(
+    values = c("indirect - WRFluency" = "#dbc6e0",
+               "indirect - Vocabulary" = "#785187", 
+               "indirect - G" = "#AEAFB3", 
+               "direct" = "#c8d4e9"),
+    breaks = c("indirect - WRFluency", "indirect - Vocabulary", "indirect - G", "direct"),   
+    labels = c("indirect - WRFluency", "indirect - Vocabulary", "indirect - G", "direct")
+  ) +
+   ggh4x::facet_nested(
+    rows = vars(MathType),
+    cols = vars(GPS, MediatorPair),
+    scales = "free_y",
+    space = "free_y",
+    strip = ggh4x::strip_nested(
+      text_x = ggh4x::elem_list_text(
+        size = c(8.5, 8.5, 8, 8), colour = rep("black", 4)
+      ),
+        background_y = ggh4x::elem_list_rect(
+          fill = c("white", "#e7e5ee"),
+          colour = "black"
+        ),
+      text_y = ggh4x::elem_list_text(
+        size = c(8,8),
+        colour = "black"
+      ),
+      by_layer_x = TRUE,
+      by_layer_y = FALSE
+    )
+  ) +
+  labs(
+    title = "C. Three-Mediator Model",
+    y = NULL,
+    x = "Effect Size (β)"
+  ) +
+  theme_minimal(base_size = 12) +
+  theme(
+    plot.title      = element_text(size = 8, hjust = -0.1, vjust = 1),
+    strip.text      = element_text(size = 8),
+    panel.border    = element_rect(colour = "black", fill = NA),
+    panel.background= element_rect(fill = "white", colour = "white"),
+    panel.grid.major= element_blank(),
+    panel.grid.minor= element_blank(),
+    axis.text.y     = element_text(size = 8, colour = "black"),
+    axis.text.x     = element_text(size = 8, colour = "black"),
+    axis.title.x    = element_text(size = 8),
+    legend.position = "bottom",
+    legend.title    = element_blank(),
+    legend.text     = element_text(size = 8),
+    legend.key.size = unit(0.4, "cm")
+  ) +
+  scale_x_continuous(
+    limits = c(-0.0033, 0.15), 
+    breaks = c(-0.0033, 0.05, 0.10, 0.15),
+    labels = c("0", "0.05", "0.10", "0.15")
+  ) +
+  scale_y_discrete(drop = TRUE) +
+  geom_text(
+    aes(label = stars),
+    position = position_stack(vjust = 0.5),
+    size = 4
+  )
+
+# mediation plot combined
+ptoall <- p1/p2/p3 
+ggsave("ptoall.png", width =8, height = 12, units = "in", dpi = 300)
+
+#--------------------------------------------------------------------------------------
+## PGS plot
+library(dplyr)
+library(stringr)
+library(forestploter)
+library(glue)
+library(forcats)
+
+dat <- dat %>%
+  mutate(PGS = recode(PGS,
+    "PGS1" = "Nonword Reading PGS",
+    "PGS2" = "Phoneme Awareness PGS",
+    "PGS3" = "Nonword Repetition PGS",
+    "PGS4" = "Spelling PGS",
+    "PGS5" = "Word Reading PGS"
+  ))
+
+age_order <- c(7, 9, 12, 14, 16)
+
+age_order <- sort(unique(as.numeric(dat$Age)))
+
+#----plot for all teacher and web math 
+dat1_all <- dat %>%
+  rename(Estimate = Estimate, SE = SE) %>%
+  mutate(
+    SE   = as.numeric(SE),
+    lwr  = Estimate - 1.96 * SE,
+    upr  = Estimate + 1.96 * SE,
+    PGS  = as.character(PGS),
+    FDR_p = as.numeric(FDR_p)
+  ) %>%
+  arrange(PGS, Outcome) %>%      # or whatever ordering you prefer
+  mutate(
+    Est_disp = sprintf("%.2f [%+.2f, %+.2f]", Estimate, lwr, upr),
+    stars = cut(
+      FDR_p,
+      breaks = c(-Inf, 0.01, 0.05, Inf),
+      labels = c("**", "*", ""),
+      right = TRUE
+    ) |> as.character()
+  )
+
+dat1_all <- dat1_all %>%
+  mutate(
+    Math_Type = case_when(
+      grepl("^[gijl].*tmat", Outcome) ~ "Teacher-rated",
+      grepl("^(j|l|p|t)mat", Outcome) ~ "Web-based",
+      grepl("gcse", Outcome, ignore.case = TRUE) ~ "GCSE",
+    ),
+    Age_num = case_when(
+      grepl("^g", Outcome) ~ 7,      # gtmat1_z
+      grepl("^i", Outcome) ~ 9,      # itmat1_z
+      grepl("^jtmat", Outcome) ~ 10, # jtmat1_z
+      grepl("^ltmat", Outcome) ~ 12, # ltmat1_z 
+
+      grepl("gcse", Outcome, ignore.case = TRUE) ~ 16,
+
+      grepl("^jmat", Outcome) ~ 10,  # jmat1_z
+      grepl("^lmat", Outcome) ~ 12,  # lmatot1_z 
+      grepl("^pmat", Outcome) ~ 16,  # pmat1_z 
+
+      TRUE ~ NA_real_
+    )
+  ) %>%
+  mutate(
+   
+    Math_Type = factor(
+      Math_Type,
+      levels = c("Teacher-rated", "GCSE", "Web-based"),
+    ),
+    Age = factor(Age_num, levels = c(7, 9, 10, 12, 16), ordered = TRUE)
+  ) %>%
+  arrange(PGS, Math_Type, Age)
+
+dat1_blocks <- lapply(split(dat1_all, dat1_all$PGS), function(d_pgs) {
+  # sort within each PGS by Math_Type then Age
+  d_pgs <- d_pgs %>%
+    arrange(Math_Type, Age)
+  
+  ## 1) PGS-level header row
+  pgs_header <- tibble(
+    PGS       = d_pgs$PGS[1],
+    Math_Type = factor(NA, levels = levels(dat1_all$Math_Type)),
+    Age       = factor(NA, levels = levels(dat1_all$Age), ordered = TRUE),
+    N         = NA_integer_,
+    Estimate  = NA_real_, 
+    lwr       = NA_real_, 
+    upr       = NA_real_,
+    Est_disp  = "", 
+    stars     = "",
+    row_type  = "pgs_header",
+    PGS_disp  = d_pgs$PGS[1],   # show PGS label here
+    Math_disp = "",             # blank
+    Age_disp  = ""              # blank
+  )
+  
+  ## 2) Math-type blocks within this PGS
+  type_blocks <- lapply(split(d_pgs, d_pgs$Math_Type), function(d_type) {
+    # Math_Type header row
+    type_header <- tibble(
+      PGS       = d_type$PGS[1],
+      Math_Type = d_type$Math_Type[1],
+      Age       = factor(NA, levels = levels(dat1_all$Age), ordered = TRUE),
+      N         = NA_integer_,
+      Estimate  = NA_real_, 
+      lwr       = NA_real_, 
+      upr       = NA_real_,
+      Est_disp  = "", 
+      stars     = "",
+      row_type  = "type_header",
+      PGS_disp  = "",                               # PGS shown above
+      Math_disp = as.character(d_type$Math_Type[1]),# show math-type label here
+      Age_disp  = ""
+    )
+    
+    body <- d_type %>%
+      mutate(
+        row_type  = "body",
+        PGS_disp  = "",   # no PGS label on body rows
+        Math_disp = "",   # no Math_Type label on body rows
+        Age_disp  = as.character(as.integer(as.character(Age)))
+      )
+    
+    bind_rows(type_header, body)
+  })
+  
+  bind_rows(list(pgs_header, bind_rows(type_blocks)))
+})
+
+dat1_all_blocks <- bind_rows(dat1_blocks)
+
+dall <- dat1_all_blocks %>%
+  mutate(
+    is_pgs_header  = row_type == "pgs_header",
+    is_type_header = row_type == "type_header",
+    is_body        = row_type == "body"
+  ) %>%
+    mutate(
+    est   = ifelse(is_body, as.numeric(Estimate), NA_real_),
+    lower = ifelse(is_body, as.numeric(lwr),      NA_real_),
+    upper = ifelse(is_body, as.numeric(upr),      NA_real_)
+  ) %>%
+  transmute(
+    `PGS` = ifelse(is_pgs_header, PGS_disp, ""),
+    `Math Type` = ifelse(is_type_header, Math_disp, ""),
+    `Math Age` = ifelse(is_body, Age_disp, ""),
+    `N`                 = ifelse(is_body & !is.na(N), as.character(N), ""),
+    ` `                 = paste(rep(" ", 20), collapse = " "),
+    `Estimate [95% CI]` = ifelse(is_body, Est_disp, ""),
+    `P`                 = ifelse(is_body, stars, ""),
+    est   = est,
+    lower = lower,
+    upper = upper
+  )
+
+dat1_for_plot <- dall[, 1:7]
+
+library(grid)
+
+tm <- forest_theme(
+  base_size   = 20,
+  refline_gp  = gpar(col = "grey50", lty = "dashed"),
+  ci_pch      = 15,
+  ci_col      = "black",
+  ci_lwd = 3
+)
+
+
+pall <- forest(
+  data      = dat1_for_plot,
+  est       = dall$est,
+  lower     = dall$lower,
+  upper     = dall$upper,
+  size = 0.4,
+  ci_column = 5,                
+  ref_line  = 0,
+  xlim      = c(-0.2, 0.2),
+  ticks_at  = seq(-0.2, 0.2, 0.1),
+  theme     = tm)
+# col_widths = c(
+#  0.18,   # PGS
+# 0.14,   # Math Type
+#  0.10,   # Math Age
+# 0.08,   # N
+#  0.30,   # CI 
+# 0.12,   # Estimate [95% CI]
+#  0.04    # P
+#)
+#)
+
+
+pall <- edit_plot(pall, row = 49, which = "background",
+               gp = gpar(fill = "#dbc6e0"))
+
+n_rows <- nrow(dat1_for_plot)
+fig_h <- 1 + n_rows * 0.33
+
+png("pall.png", width = 15, height = fig_h, units = "in", res = 300)
+plot(pall)              
+dev.off()
+
+#----------------------------------------------------------------------------------------------
+## pheontypic plot
+vars =df1[,c('ecmcvfl1_z', 'ecpht1_z', 'ecnont1_z', 'gvocabt1_z','gtowt1_z', 'gtmat1_z', 'itmat1_z', 'jtmat1_z', 'jmatt1_z', 'lmatot1_z', 'ltmat1_z', 'pmatt1_z', 'pcexgcsematgrdm1_z')]
+
+# Step 2: Compute correlation matrix
+cor_vars <- rcorr(as.matrix(vars))
+
+# Step 3: Melt correlation matrix
+r_matrix <- cor_vars$r
+r_matrix[lower.tri(r_matrix)] <- NA
+r_vars <- melt(r_matrix, na.rm = TRUE)
+colnames(r_vars) <- c("Var1", "Var2", "r")
+r_vars$pair_var <- paste(r_vars$Var1, r_vars$Var2, sep = " ")
+
+
+# Step 4: Melt sample size matrix
+n_matrix <- cor_vars$n
+n_matrix[lower.tri(n_matrix)] <- NA
+n_vars <- melt(n_matrix, na.rm = TRUE)
+
+
+colnames(n_vars) <- c("Var1", "Var2", "N")
+n_vars$pair_var <- paste(n_vars$Var1, n_vars$Var2, sep = " ")
+
+# Step 5: Melt p-value matrix
+p_matrix <- cor_vars$P
+p_matrix[lower.tri(p_matrix)] <- NA
+p_vars <- melt(p_matrix, na.rm = TRUE)
+colnames(p_vars) <- c("Var1", "Var2", "p")
+p_vars$pair_var <- paste(p_vars$Var1, p_vars$Var2, sep = " ")
+
+# Step 6: Merge all results
+Rvars <- merge(r_vars[, c("pair_var", "r")], n_vars[, c("pair_var", "N")], by = "pair_var")
+Rvars <- merge(Rvars, p_vars[, c("pair_var", "p")], by = "pair_var")
+
+# Step 7: Extract original variable names
+Rvars$var1 <- sapply(strsplit(Rvars$pair_var, " "), `[`, 1)
+Rvars$var2 <- sapply(strsplit(Rvars$pair_var, " "), `[`, 2)
+
+# Step 8: Compute confidence intervals
+Rvars$lwr <- mapply(function(r, n) CIr(r, n, level = 0.95)[1], Rvars$r, Rvars$N)
+Rvars$upr <- mapply(function(r, n) CIr(r, n, level = 0.95)[2], Rvars$r, Rvars$N)
+
+write.csv(Rvars, "C:/Users/zhuz12/OneDrive - VUMC/Desktop/JEP_script/main/Rvars.csv", row.names = FALSE)
+
+
+#----plot------
+Revars <- c('ecmcvfl1_z', 'ecpht1_z', 'ecnont1_z','gvocabt1_z','gtowt1_z')
+Mathvars <- c('gtmat1_z', 'itmat1_z', 'jtmat1_z','jmatt1_z', 'ltmat1_z','lmatot1_z', 'pcexgcsematgrdm1_z','pmatt1_z')
+
+reading_labels <- c(
+  'ecmcvfl1_z' = "Verbal Fluency",
+  'ecpht1_z' = "Phonological Awareness",
+  'ecnont1_z' = "Nonword Repetition",
+  'gvocabt1_z' = "Vocabulary",
+  'gtowt1_z' = "Word Reading Fluency")
+
+math_lables = c(
+  'gtmat1_z' = "math7",
+  'itmat1_z' = "math9",
+  'jtmat1_z' = "math10",
+  'jmatt1_z' = "math10_w",
+  'lmatot1_z' = "math12_w",
+  'ltmat1_z' = "math12",
+  'pcexgcsematgrdm1_z' = "math16",
+  'pmatt1_z'= "math16_w"
+)
+
+R_Mat <- Rvars %>%
+  mutate(
+    var1 = as.character(var1),
+    var2 = as.character(var2)
+  ) %>%
+  filter((var1 %in% Mathvars & var2 %in% Revars) |
+         (var2 %in% Mathvars & var1 %in% Revars)) %>%
+  mutate(
+    reading_var = ifelse(var1 %in% Revars, var1, var2),
+    math_var = ifelse(var1 %in% Mathvars, var1, var2),
+    reading_label = reading_labels[reading_var],
+    math_label = math_lables[math_var]
+  ) %>%
+  filter(!is.na(reading_label)) 
+
+
+R_Mat <- R_Mat %>%
+  mutate(
+    assess_type = ifelse(str_ends(math_label, "_w"), "Web", "Teacher/GCSE"),
+    age = as.numeric(str_extract(math_label, "\\d+"))
+  )
+
+# order facets consistently
+reading_order <- c("Verbal Fluency", "Phonological Awareness", "Nonword Repetition", "Vocabulary", "Word Reading Fluency")
+
+R_Mat <- R_Mat %>%
+  mutate(
+    reading_label = factor(reading_label, levels = reading_order),
+    assess_type   = factor(assess_type, levels = c("Teacher/GCSE", "Web")),
+    reading_age = case_when(
+      reading_var %in% c('ecmcvfl1_z', 'ecpht1_z', 'ecnont1_z') ~ "Reading assessed at age 4.5",
+      reading_var %in% c('gvocabt1_z', 'gtowt1_z') ~ "Reading assessed at age 7"),
+    reading_age = factor(reading_age, levels = c("Reading assessed at age 4.5", "Reading assessed at age 7"))
+  )
+
+library(ggnewscale)
+library(ggh4x)
+library(stringr)
+
+
+
+pm <- ggplot(R_Mat, aes(x = age, y = r, color = reading_label)) +
+  geom_errorbar(aes(ymin = lwr, ymax = upr, color = reading_label), width = 0.2) +
+    scale_color_manual(values = c(
+    "Verbal Fluency"         = "#845116", 
+    "Phonological Awareness" = "#658d4b", 
+    "Nonword Repetition"     = "#2c4968", 
+    "Vocabulary"             = "#9b71aa", 
+    "Word Reading Fluency"   = "#785187"
+  ), guide = "none") +
+  
+  ggnewscale::new_scale_color() +
+  
+  geom_point(aes(color= reading_label), size =3) +
+  geom_hline(yintercept = 0, linetype = "dashed", color = "gray40") +
+  scale_color_manual(values = c(
+    "Verbal Fluency" = "#ebd49c", 
+    "Phonological Awareness" = "#d6e4cc", 
+    "Nonword Repetition" = "#96b4d3", 
+    "Vocabulary" = "#dbc6e0", 
+    "Word Reading Fluency" = "#9b72aa"
+  )) +
+  scale_x_continuous(breaks = c(7,9,10,12,16))+
+  ggh4x::facet_nested(
+    rows = vars(reading_age, reading_label),
+    cols = vars(assess_type),
+    scales = "fixed",
+    switch = "y",
+    strip = ggh4x::strip_nested(
+      background_y = ggh4x::elem_list_rect(
+        fill = c("#e3edf7", "#e7e5ee",
+                 "white", "white", "white", "white", "white"),
+        colour = rep("white",7)
+      ),
+      text_y = ggh4x::elem_list_text(
+        size = c(8, 8, 8, 8, 8, 8, 8), colour = rep("black", 7)
+      ),
+      
+      by_layer_y = FALSE
+    )
+  ) +
+  labs(
+    title = "a. Correlations between reading and math achievement \nacross development",
+    x = "Age",
+    y = "Correlation (r)"
+  ) +
+  theme_minimal(base_size = 12) +
+  theme(
+    plot.title = element_text(size = 10),
+    strip.text = element_text(size = 8),
+    strip.background = element_blank(),
+    strip.placement = "outside",
+    panel.border = element_rect(colour = 'black', fill = NA),
+    panel.background = element_rect(fill = "white", colour = "white", size = 0.5, linetype = "solid"),
+    panel.grid.major = element_blank(), 
+    panel.grid.minor = element_blank(),
+    axis.text.y = element_text(size = 8, color = "black", family = "sans"),
+    axis.text.x = element_text(size = 8, color = "black", family = "sans"),
+    axis.title.x = element_text(size = 8),
+    axis.title.y = element_text(size = 8),
+    legend.position = "none"
+  )
+
+
+pm <- ggsave("plot.png", height = 8, width = 4.5)
+
+t <- t %>% filter(!term %in% c("ecmcgci1_z", "gcg1_z"))
+t <- t %>% mutate(term = recode(term, 
+                                "ecpht1_z"    = "Phonological Awareness",
+                                "ecnont1_z"   = "Nonword Repetition",
+                                "ecmcvfl1_z"  = "Verbal Fluency",
+                                "gvocabt1"    = "Vocabulary",
+                                "gtowt1_z"    = "Word Reading Fluency"))
+t <- t %>% mutate(Model = recode(Model, 
+                                "m7_g1" = "math7_tr",
+                                "m7_g2" = "math7_tr",
+                                "m9_g1" = "math9_tr",
+                                "m9_g2" = "math9_tr",
+                                "m10_g1" = "math10_tr",
+                                "m10_g2" = "math10_tr",
+                                "m10_g1_w" = "math10_wb",
+                                "m10_g2_w" = "math10_wb",
+                                "m12_g1" = "math12_tr",
+                                "m12_g2" = "math12_tr",
+                                "m12_g1_w" = "math12_wb",
+                                "m12_g2_w" = "math12_wb",
+                                "m16_g1" = "math16_GCSE",
+                                "m16_g2" = "math16_GCSE",
+                                "m16_g1_w" = "math16_wb",
+                                "m16_g2_w" = "math16_wb"))
+t_plot <- t %>%
+  rename(reading_label = term, math_label = Model)
+
+t_plot$reading_label <- factor(t_plot$reading_label, levels = c(
+  "Verbal Fluency",
+  "Phonological Awareness",
+  "Nonword Repetition",
+  "Vocabulary",
+  "Word Reading Fluency"
+))
+t_plot$math_label <- factor(t_plot$math_label, levels = c(
+  "math7_tr",
+  "math9_tr",
+  "math10_tr",
+  "math10_wb",
+  "math12_tr",
+  "math12_wb",
+  "math16_GCSE",
+  "math16_wb"
+))
+
+
+t_plot <- t_plot %>%
+  mutate(
+    assess_type = ifelse(str_ends(math_label, "_wb"), "Web","Teacher/GCSE"),
+    age = as.numeric(str_extract(math_label, "\\d+"))
+  )
+
+reading_order <- c("Verbal Fluency", "Phonological Awareness", "Nonword Repetition",
+                   "Vocabulary", "Word Reading Fluency")
+
+t_plot  <- t_plot %>%
+  mutate(
+    reading_label = factor(reading_label, levels = reading_order),
+    assess_type   = factor(assess_type, levels = c("Teacher/GCSE", "Web")),
+    reading_age = case_when(
+      reading_label %in% c("Verbal Fluency", "Phonological Awareness", "Nonword Repetition") ~ "Reading & g assessed at age 4.5",
+      reading_label %in% c("Vocabulary", "Word Reading Fluency") ~ "Reading & g assessed at age 7"),
+    reading_age = factor(reading_age, levels = c("Reading & g assessed at age 4.5", "Reading & g assessed at age 7"))
+  )
+
+
+
+# library(ggnewscale) # ensure loaded
+
+
+pr <- ggplot(t_plot, aes(x = age, y = Estimate)) +
+  geom_errorbar(aes(ymin = LB, ymax = UB, color = reading_label),
+                width = 0.2) +
+  scale_color_manual(values = c(
+    "Verbal Fluency"         = "#845116", 
+    "Phonological Awareness" = "#658d4b", 
+    "Nonword Repetition"     = "#2c4968", 
+    "Vocabulary"             = "#9b71aa", 
+    "Word Reading Fluency"   = "#785187"
+  ), guide = "none") +
+
+  ggnewscale::new_scale_color() +
+
+  geom_point(aes(color = reading_label), size = 3) +
+  scale_color_manual(values = c(
+    "Verbal Fluency"         = "#ebd49c", 
+    "Phonological Awareness" = "#d6e4cc", 
+    "Nonword Repetition"     = "#96b4d3", 
+    "Vocabulary"             = "#dbc6e0", 
+    "Word Reading Fluency"   = "#9b72aa"
+  )) +
+
+
+  geom_hline(yintercept = 0, linetype = "dashed", color = "gray40") +
+
+  scale_x_continuous(breaks = c(7, 9, 10, 12, 16)) +
+  scale_y_continuous(limits = c(-0.4, 0.6), breaks = seq(-0.6, 0.6, 0.3)) +
+  ggh4x::facet_nested(
+    rows = vars(reading_age, reading_label),
+    cols = vars(assess_type),
+    scales = "fixed",
+    switch = "y",
+    strip = ggh4x::strip_nested(
+      background_y = ggh4x::elem_list_rect(
+        fill = c("#e3edf7", "#e7e5ee",
+                 "white", "white", "white", "white", "white"),
+        colour = rep("white",7)
+      ),
+      text_y = ggh4x::elem_list_text(
+        size = c(8, 8, 8, 8, 8, 8, 8), colour = rep("black", 7)
+      ),
+      
+      by_layer_y = FALSE
+    )
+  ) +
+  labs(
+    title = "b. Correlations between reading and math achievement \naccounting for g",
+    x = "Age",
+    y = expression("Standardized " * italic(beta) * " coefficient")
+  ) +
+ theme_minimal(base_size = 12) +
+  theme(
+    plot.title = element_text(size = 10),
+    strip.text = element_text(size = 8),
+     strip.background = element_blank(),
+    strip.placement = "outside",
+    panel.border = element_rect(colour = 'black', fill = NA),
+    panel.background = element_rect(fill = "white", colour = "white", size = 0.5, linetype = "solid"),
+    panel.grid.major = element_blank(), 
+    panel.grid.minor = element_blank(),
+    axis.text.y = element_text(size = 8, color = "black", family = "sans"),
+    axis.text.x = element_text(size = 8, color = "black", family = "sans"),
+    axis.title.x = element_text(size = 8),
+    axis.title.y = element_text(size = 8),
+    legend.position = "none"
+  )
+
+library(patchwork)
+pp = pm + pr
+
+p <- ggsave("plot.png", height = 8, width = 9)
