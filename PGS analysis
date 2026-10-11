@@ -28,55 +28,54 @@ PC <- paste0("PC", 1:10, collapse = " + ")
 
 outcomes <- c('gtmat1_z', 'itmat1_z', 'jtmat1_z', 'jmatt1_z', 'jmcat1t1_z','jmcat2t1_z', 'jmcat3t1_z', 'lmatot1_z', 'lma1tot1_z', 'lma2tot1_z', 'lma3tot1_z', 'ltmat1_z', 'pcexgcsematgrdm1_z', 'pcpvtot1_z', 'pcuntot1_z', 'pmatt1_z')
 pgs_vars <- paste0("PGS", 1:5)
+age_labels <- c("Age7", "Age9", "Age10", "Age12", "Age16")
 
 # Run Models
 
-gee_summary_list <- list()
+lm_summary_list <- list()
 
 ## Loop over outcomes
-for (outcome_var in outcomes) {
-
-  predictors <- c(pgs_vars, paste0("PC", 1:10), "chiptype")
-  formula_str <- as.formula(paste(outcome_var, "~", paste(predictors, collapse = " + ")))
+for (i in seq_along(outcomes)) {
+  outcome_var <- outcomes[i]
+  age <- age_labels[i]
+  predictors <- pgs_vars
   
-  GEEfit <- gee(formula_str, id = df1$randomfamid, data = df1, corstr = "exchangeable")
-  gee_coef <- coef(summary(GEEfit))
-  nobs <- length(GEEfit$y)
-
+  fml <- as.formula(paste(outcome_var, "~", paste(pgs_vars, collapse = "+")))
+  
+  LMfit <- lm(formula = fml, data = df1)
+  lm_coef <- coef(summary(LMfit))
+  n_obs <- nobs(LMfit)
+  
   for (pgs in pgs_vars) {
-    if (pgs %in% rownames(gee_coef)) {
-      est <- gee_coef[pgs, "Estimate"]
-      naive_se <- gee_coef[pgs, "Naive S.E."]
-      naive_z <- gee_coef[pgs, "Naive z"]
-      robust_se <- gee_coef[pgs, "Robust S.E."]
-      robust_z <- gee_coef[pgs, "Robust z"]
-      pval <- 2 * pnorm(abs(robust_z), lower.tail = FALSE)
-      r2 <- est^2
-      
-      gee_summary_list[[paste0(outcome_var, "_", pgs)]] <- data.frame(
-        Outcome = outcome_var,
-        PGS = pgs,
-        Estimate = est,
-        Naive_SE = naive_se,
-        Naive_Z = naive_z,
-        Robust_SE = robust_se,
-        Robust_Z = robust_z,
-        P_value = pval,
-        R2 = r2,
-        N = nobs
-      )
+    if (!pgs %in% rownames(lm_coef)) {
+      next
     }
+    
+    est <- lm_coef[pgs, "Estimate"]
+    se <- lm_coef[pgs, "Std. Error"]
+    t_value <- lm_coef[pgs, "t value"]
+    p_value <- lm_coef[pgs, "Pr(>|t|)"]
+    ci <- confint(LMfit, parm = pgs, level = 0.95)
+    
+    lm_summary_list[[paste0(age, "_", pgs)]] <- data_frame(
+      Outcome = outcome_var,
+      Age = age,
+      PGS = pgs,
+      Estimate = est, 
+      SE = se,
+      T_value = t_value,
+      P_value = p_value,
+      ulb  = ci[1],
+      lwb = ci[2],
+      N = n_obs
+    )
   }
 }
+lm_summary_all <- do.call(rbind, lm_summary_list)
+rownames(lm_summary_all) <- NULL
 
-
-## Combine all results
-gee_summary_all <- do.call(rbind, gee_summary_list)
-rownames(gee_summary_all) <- NULL
-
-## Adjust p-values
-gee_summary_all$FDR_p <- p.adjust(gee_summary_all$P_value, method = "fdr")
-gee_summary_all$Bonferroni_p <- p.adjust(gee_summary_all$P_value, method = "bonferroni")
+# Adjust p-values
+lm_summary_all$FDR_p <- p.adjust(lm_summary_all$P_value, method = "fdr")
 
 # View summary
 head(gee_summary_all)
